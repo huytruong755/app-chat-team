@@ -41,9 +41,14 @@ android {
 
 dependencies {
 
-
+    implementation(libs.country.code.picker)
+    implementation(libs.image.picker)
     implementation(libs.androidx.ui)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.compose.material3)
+    implementation (libs.country.code.picker)
+    implementation(libs.androidx.core.ktx.v1120)
+    implementation(libs.androidx.compose.ui.v160)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.coil.compose) // để hiển thị ảnh từ URL
     implementation(libs.androidx.core.ktx)

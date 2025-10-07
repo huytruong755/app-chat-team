@@ -116,7 +116,7 @@ fun OnboardingScreen(navController: NavController) {
         )
         val onStartClicked =
             {
-            navController.navigate("chat_screen")
+            navController.navigate("PhoneNumber")
         }
         Button(
             onClick = onStartClicked,

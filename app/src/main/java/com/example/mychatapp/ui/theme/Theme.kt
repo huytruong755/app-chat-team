@@ -52,6 +52,7 @@ fun MyChatAppTheme(
 
     val colorScheme = LightColorScheme
 
+
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,

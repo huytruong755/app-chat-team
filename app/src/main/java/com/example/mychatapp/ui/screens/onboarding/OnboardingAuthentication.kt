@@ -2,9 +2,7 @@ package com.example.mychatapp.ui.screens.onboarding
 
 import com.example.mychatapp.ui.screens.onboarding.utils.PhoneValidator
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -166,23 +164,30 @@ fun PhoneNumberAuthentication(navController: NavController) {
                     ),
                 )
             }
-
-
         }
         Spacer(modifier = Modifier.height(30.dp))
         val onStartClicked =
             {
                 val countryCode = "+84" // hoặc countryCodePicker.selectedCountryCodeWithPlus nếu bạn có biến đó
+                var phone = phoneNumber.trim()
+
+                // Nếu số bắt đầu bằng 0 thì bỏ đi (áp dụng cho nhiều vùng, đặc biệt là Việt Nam)
+                if (phone.startsWith("0")) {
+                    phone = phone.drop(1)
+                }
+
+                val fullPhone = "$countryCode$phone"
                 val error = PhoneValidator.validatePhoneNumber(phoneNumber, countryCode)
 
                 if (error != null) {
                     Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
                 } else {
-                    navController.navigate("PhoneNumber")
+                    navController.navigate("NumberCode/$fullPhone")
                 }
             }
         //dùng Retrofit để gọi API và ViewModel để xử lý logic.
-        //hiện tại chưa có 
+        //hiện tại chưa có
+
         Button(
             onClick = onStartClicked,
             modifier = Modifier

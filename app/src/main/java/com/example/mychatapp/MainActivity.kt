@@ -8,9 +8,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.mychatapp.ui.screens.onboarding.AuthenticationEnterCode
 import com.example.mychatapp.ui.screens.onboarding.OnboardingScreen
 import com.example.mychatapp.ui.screens.onboarding.PhoneNumberAuthentication
 import com.example.mychatapp.ui.theme.MyChatAppTheme
@@ -44,6 +47,14 @@ fun MyChatApp() {
             }
             composable ("PhoneNumber"){
                 PhoneNumberAuthentication(navController)
+            }
+            composable (
+                route = "NumberCode/{phoneNumber}",
+                arguments = listOf(navArgument("phoneNumber") { type = NavType.StringType })
+            ){ backStackEntry ->
+                val phoneNumber = backStackEntry.arguments?.getString("phoneNumber") ?: ""
+
+                AuthenticationEnterCode(navController, phoneNumber)
             }
             composable("home") {
                 OnboardingScreen(navController)

@@ -11,14 +11,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.mychatapp.R
 import kotlinx.coroutines.delay
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuthenticationEnterCode(
     navController: NavController,
@@ -31,13 +34,9 @@ fun AuthenticationEnterCode(
     var resendMessage by remember { mutableStateOf("") }
     var shouldResend by remember { mutableStateOf(false) }
 
-    // ⚡ Biến tạm để chỉnh số điện thoại (nếu cần)
-    var phoneInput by remember { mutableStateOf(phoneNumber) }
-
-    // Focus requester để hiển thị bàn phím khi nhấn vào ô
     val focusRequester = remember { FocusRequester() }
 
-    // Giả lập gửi lại mã
+    // 🕒 Giả lập gửi lại mã OTP
     LaunchedEffect(shouldResend) {
         if (shouldResend) {
             isSending = true
@@ -49,103 +48,130 @@ fun AuthenticationEnterCode(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .padding(16.dp)
-            .imePadding(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Spacer(modifier = Modifier.height(120.dp))
-
-        Text(
-            text = "Enter Code",
-            textAlign = TextAlign.Center,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF000000),
-            lineHeight = 38.sp,
-            modifier = Modifier.width(350.dp)
-        )
-
-        Spacer(modifier = Modifier.height(15.dp))
-
-        Text(
-            text = "We have sent you an SMS with the code\n to $phoneNumber",
-            textAlign = TextAlign.Center,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF000000),
-            lineHeight = 28.sp,
-            modifier = Modifier.width(350.dp)
-        )
-
-        Spacer(modifier = Modifier.height(25.dp))
-
-        // ✅ TextField ẩn - nhưng có thể focus để hiện bàn phím
-        TextField(
-            value = otpCode,
-            onValueChange = {
-                if (it.length <= maxLength && it.all { c -> c.isDigit() }) {
-                    otpCode = it
-                }
-            },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier
-                .focusRequester(focusRequester)
-                .width(1.dp)
-                .height(1.dp),
-            colors = TextFieldDefaults.colors(
-                unfocusedContainerColor = Color.Transparent,
-                focusedContainerColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent
-            )
-        )
-
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            repeat(maxLength) { index ->
-                val char = otpCode.getOrNull(index)?.toString() ?: ""
-                Box(
-                    modifier = Modifier
-                        .size(50.dp)
-                        .border(
-                            width = 1.dp,
-                            color = Color.Gray,
-                            shape = MaterialTheme.shapes.medium
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {},
+                navigationIcon = {
+                    IconButton(onClick = { navController.navigate("PhoneNumber") }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.vector),
+                            contentDescription = "Back",
+                            modifier = Modifier.size(15.dp),
+                            tint = Color.Black
                         )
-                        .clickable {
-                            // Khi nhấn vào ô -> focus vào TextField ẩn -> bàn phím hiện
-                            focusRequester.requestFocus()
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = char,
-                        style = MaterialTheme.typography.headlineSmall
-                    )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    navigationIconContentColor = Color.Black
+                )
+            )
+        }
+    ) { innerPadding ->
+
+        // Nội dung chính
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp)
+                .fillMaxSize()
+                .imePadding(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(80.dp))
+
+            Text(
+                text = "Enter Code",
+                textAlign = TextAlign.Center,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.Black,
+                lineHeight = 38.sp,
+                modifier = Modifier.width(350.dp)
+            )
+
+            Spacer(modifier = Modifier.height(15.dp))
+
+            Text(
+                text = "We have sent you an SMS with the code\n to $phoneNumber",
+                textAlign = TextAlign.Center,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.Black,
+                lineHeight = 28.sp,
+                modifier = Modifier.width(350.dp)
+            )
+
+            Spacer(modifier = Modifier.height(25.dp))
+
+            // ✅ TextField ẩn để nhập OTP (focus)
+            TextField(
+                value = otpCode,
+                onValueChange = {
+                    if (it.length <= maxLength && it.all { c -> c.isDigit() }) {
+                        otpCode = it
+                    }
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier
+                    .focusRequester(focusRequester)
+                    .width(1.dp)
+                    .height(1.dp),
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent
+                )
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                repeat(maxLength) { index ->
+                    val char = otpCode.getOrNull(index)?.toString() ?: ""
+                    Box(
+                        modifier = Modifier
+                            .size(50.dp)
+                            .border(
+                                width = 1.dp,
+                                color = Color.Gray,
+                                shape = MaterialTheme.shapes.medium
+                            )
+                            .clickable { focusRequester.requestFocus() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = char,
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(30.dp))
 
-        Button(
-            onClick = { shouldResend = true },
-            enabled = !isSending,
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E88E5))
-        ) {
-            Text(
-                text = if (isSending) "Đang gửi..." else "Resend code",
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.offset(y = (-1.8).dp)
-            )
-        }
+            Button(
+                onClick = { shouldResend = true },
+                enabled = !isSending,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E88E5))
+            ) {
+                Text(
+                    text = if (isSending) "Đang gửi..." else "Resend code",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.offset(y = (-1.8).dp)
+                )
+            }
 
-        if (resendMessage.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = resendMessage, color = Color.Gray, fontSize = 14.sp)
+            if (resendMessage.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = resendMessage,
+                    color = Color.Gray,
+                    fontSize = 14.sp
+                )
+            }
         }
     }
 }

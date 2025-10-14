@@ -7,10 +7,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+//import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.offset
+//import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -71,7 +72,6 @@ fun PhoneNumberAuthentication(navController: NavController) {
             text = "Please confirm your country code and enter \nyour phone number",
             textAlign = TextAlign.Center,
             fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold,
             color = Color(0xFF000000),
             lineHeight = 28.sp,
             modifier = Modifier
@@ -188,23 +188,26 @@ fun PhoneNumberAuthentication(navController: NavController) {
         //dùng Retrofit để gọi API và ViewModel để xử lý logic.
         //hiện tại chưa có
 
-        Button(
-            onClick = onStartClicked,
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp)
-                .padding(horizontal = 16.dp)
-
+                .padding(horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Continue",
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
+            // Các phần tử khác...
+            Button(
+                onClick = onStartClicked,
                 modifier = Modifier
-                    .offset(y = (-1.8).dp)
-            )
+                    .fillMaxWidth()
+                    .height(56.dp)
+            ) {
+                Text(
+                    text = "Continue",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
-
     }
 }

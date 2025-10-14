@@ -14,6 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.mychatapp.ui.screens.onboarding.AuthenticationEnterCode
+import com.example.mychatapp.ui.screens.onboarding.LoginUserProfileScreen
 import com.example.mychatapp.ui.screens.onboarding.OnboardingScreen
 import com.example.mychatapp.ui.screens.onboarding.PhoneNumberAuthentication
 import com.example.mychatapp.ui.theme.MyChatAppTheme
@@ -55,6 +56,9 @@ fun MyChatApp() {
                 val phoneNumber = backStackEntry.arguments?.getString("phoneNumber") ?: ""
 
                 AuthenticationEnterCode(navController, phoneNumber)
+            }
+            composable("UserProfile"){
+                LoginUserProfileScreen(navController)
             }
             composable("home") {
                 OnboardingScreen(navController)

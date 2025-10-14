@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+//import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -107,7 +107,6 @@ fun OnboardingScreen(navController: NavController) {
             text = "Terms & Privacy Policy",
             textAlign = TextAlign.Center,
             fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold,
             color = Color(0xFF000000),
             lineHeight = 28.sp,
             modifier = Modifier

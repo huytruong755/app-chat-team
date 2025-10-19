@@ -1,23 +1,17 @@
 package com.example.mychatapp.ui.screens.onboarding
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-//import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.motionEventSpy
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -25,115 +19,149 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.mychatapp.R
 
-
-//Hình minh họa
-//Tiêu đề
-//Nút
-
 @Composable
 fun OnboardingScreen(navController: NavController) {
-    //dọc
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 32.dp),
-
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
-
+            .background(Color.White)
+            .padding(horizontal = 24.dp, vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        //image
-        Spacer(modifier = Modifier.height(135.dp))
 
+        // ⬆️ Spacer trên cùng - để đẩy nội dung tổng thể lên/xuống
+        Spacer(modifier = Modifier.height(40.dp)) // 👈 tuỳ chỉnh giá trị này
 
-        Image(
-            painter = painterResource(id = R.drawable.circlebg1),
-            contentDescription = "Logo 2",
-            modifier = Modifier
-                .width(117.46.dp)
-                .height(117.46.dp)
-                .offset(x = (-70).dp, y = (50).dp)
-        )
-
-        Image(
-            painter = painterResource(id = R.drawable.member1),
-            contentDescription = "Logo 1",
-            modifier = Modifier
-                .width(149.98.dp)
-                .height(228.dp)
-                .offset(x = (-62).dp, y = (-60).dp)
-
-        )
-        Image(
-            painter = painterResource(id = R.drawable.chat1),
-            contentDescription = "Logo 1",
-            modifier = Modifier
-                .width(53.dp)
-                .height(28.67.dp)
-                .offset(x = (-25).dp, y = (-295).dp)
-
-        )
-        Image(
-            painter = painterResource(id = R.drawable.circlebg2),
-            contentDescription = "Logo 2",
-            modifier = Modifier
-                .width(117.46.dp)
-                .height(117.46.dp)
-                .offset(x = (90).dp, y = (-385).dp)
-        )
-        Image(
-            painter = painterResource(id = R.drawable.chat2),
-            contentDescription = "Logo 2",
-            modifier = Modifier
-                .width(47.dp)
-                .height(25.42.dp)
-                .offset(x = (50).dp, y = (-500).dp)
-        )
-
-
-        Text(
-            text = "Connect easily with\nyour family and friends\nover countries",
-            textAlign = TextAlign.Center,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF000000),
-            lineHeight = 38.sp,
-            modifier = Modifier
-                .width(350.dp)
-                .offset(y = (-180).dp)
-        )
-
-        Text(
-            text = "Terms & Privacy Policy",
-            textAlign = TextAlign.Center,
-            fontSize = 15.sp,
-            color = Color(0xFF000000),
-            lineHeight = 28.sp,
-            modifier = Modifier
-                .width(280.dp)
-                .offset(y = (-60).dp)
-        )
-        val onStartClicked =
-            {
-            navController.navigate("PhoneNumber")
-        }
-        Button(
-            onClick = onStartClicked,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .padding(horizontal = 16.dp)
-                .offset(y = (-45).dp)
+        // 🟦 Illustration + Text
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Text(
-                text = "Start Messaging",
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
+            // Illustration area
+            BoxWithConstraints(
                 modifier = Modifier
-                .offset(y = (-1.8).dp)
-            )
+                    .fillMaxWidth()
+                    .height(300.dp), // Hoặc weight(0.4f) nếu muốn responsive
+                contentAlignment = Alignment.Center
+            ) {
+                val screenWidth = maxWidth
+                val screenHeight = maxHeight
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Left illustration
+                    Box(
+                        modifier = Modifier
+                            .width(screenWidth * 0.45f)
+                            .aspectRatio(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.circlebg1),
+                            contentDescription = "Circle Left",
+                            modifier = Modifier
+                                .fillMaxSize(0.8f)
+                                .align(Alignment.Center)
+                                .offset(x = screenWidth * 0.05f, y = screenHeight * 0.02f)
+                        )
+
+                        Image(
+                            painter = painterResource(id = R.drawable.member1),
+                            contentDescription = "Hình 1",
+                            modifier = Modifier
+                                .fillMaxWidth(0.95f)
+                                .aspectRatio(0.5f)
+                                .align(Alignment.BottomStart)
+                                .offset(x = screenWidth * 0.08f, y = screenHeight * 0.25f)
+                        )
+
+                        Image(
+                            painter = painterResource(id = R.drawable.chat1),
+                            contentDescription = "Chat 1",
+                            modifier = Modifier
+                                .fillMaxWidth(0.35f)
+                                .aspectRatio(1f)
+                                .align(Alignment.TopEnd)
+                                .offset(x = screenWidth * 0.03f, y = screenHeight * 0.02f)
+                        )
+                    }
+
+                    // Right illustration
+                    Box(
+                        modifier = Modifier
+                            .width(screenWidth * 0.45f)
+                            .aspectRatio(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.circlebg2),
+                            contentDescription = "Circle Right",
+                            modifier = Modifier
+                                .fillMaxSize(0.7f)
+                                .align(Alignment.Center)
+                                .offset(x = -screenWidth * 0.01f, y = -screenHeight * 0.23f)
+                        )
+
+                        Image(
+                            painter = painterResource(id = R.drawable.chat2),
+                            contentDescription = "Chat 2",
+                            modifier = Modifier
+                                .fillMaxWidth(0.35f)
+                                .aspectRatio(1f)
+                                .align(Alignment.TopEnd)
+                                .offset(x = -screenWidth * 0.3f, y = -screenHeight * 0.18f)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(90.dp)) // khoảng cách illustration ↔ text
+
+            // 🟨 Text Section
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "Connect easily with \nyour family and friends \nover countries",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 25.sp,
+                    textAlign = TextAlign.Center,
+                    letterSpacing = 0.5.sp,
+                    color = Color.Black,
+                    fontStyle = FontStyle.Normal,
+                    lineHeight = 30.sp
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Text(
+                    text = "Terms & Privacy Policy",
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                    color = Color.Gray
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 🟩 Bottom Button
+                Button(
+                    onClick = { navController.navigate("PhoneNumber") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(28.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF0A5CFF)
+                    )
+                ) {
+                    Text(
+                        text = "Start Messaging",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.White
+                    )
+                }
+            }
         }
     }
 }
-

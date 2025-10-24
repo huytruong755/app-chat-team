@@ -34,7 +34,7 @@ fun AuthenticationEnterCode(
     var isSending by remember { mutableStateOf(false) }
     var resendMessage by remember { mutableStateOf("") }
     var shouldResend by remember { mutableStateOf(false) }
-    val userInput by remember { mutableStateOf("") }
+    var userInput by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
 
     val focusRequester = remember { FocusRequester() }

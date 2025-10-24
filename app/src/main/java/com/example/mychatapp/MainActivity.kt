@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.mychatapp.ui.screens.onboarding.OnboardingContact
 import com.example.mychatapp.ui.screens.onboarding.AuthenticationEnterCode
 import com.example.mychatapp.ui.screens.onboarding.LoginUserProfileScreen
 import com.example.mychatapp.ui.screens.onboarding.OnboardingScreen
@@ -59,6 +60,9 @@ fun MyChatApp() {
             }
             composable("UserProfile"){
                 LoginUserProfileScreen(navController)
+            }
+            composable("contacts"){
+                OnboardingContact()
             }
             composable("home") {
                 OnboardingScreen(navController)

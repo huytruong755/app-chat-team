@@ -185,7 +185,7 @@ fun LoginUserProfileScreen (navController: NavController) {
 
                     if (!isFirstNameEmpty && !isLastNameEmpty) {
                         // TODO: điều hướng hoặc lưu thông tin
-                        // navController.navigate("NextScreen")
+                        navController.navigate("contacts")
                     }
                 },
                 modifier = Modifier

@@ -1,4 +1,4 @@
-package com.example.mychatapp.ui.screens.onboarding
+package com.example.mychatapp.ui.screens.onboarding.utils.bottomNavigation
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -28,8 +28,9 @@ import com.example.mychatapp.model.Contact
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OnboardingContact() {
+fun OnboardingContacts() {
     var searchQuery by remember { mutableStateOf("") }
+    var selectedIndex by remember { mutableIntStateOf(0) }
 
     Scaffold(
         topBar = {
@@ -40,6 +41,11 @@ fun OnboardingContact() {
                         Icon(Icons.Default.Add, contentDescription = "Add Contact")
                     }
                 }
+            )
+        }, bottomBar = {
+            BottomNavigationBar(
+                selectedIndex = selectedIndex,
+                onItemSelected = { selectedIndex = it }
             )
         }
     ) { padding ->
@@ -149,7 +155,7 @@ fun ContactItem(contact: Contact) {
                 }
             }
 
-            // 🟢 Chấm online
+            // Chấm online
             if (contact.isOnline) {
                 Box(
                     modifier = Modifier

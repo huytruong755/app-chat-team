@@ -13,11 +13,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.mychatapp.ui.screens.onboarding.OnboardingContact
+import com.example.mychatapp.ui.screens.onboarding.utils.bottomNavigation.OnboardingContacts
 import com.example.mychatapp.ui.screens.onboarding.AuthenticationEnterCode
 import com.example.mychatapp.ui.screens.onboarding.LoginUserProfileScreen
 import com.example.mychatapp.ui.screens.onboarding.OnboardingScreen
 import com.example.mychatapp.ui.screens.onboarding.PhoneNumberAuthentication
+import com.example.mychatapp.ui.screens.onboarding.utils.bottomNavigation.MainNavigation
 import com.example.mychatapp.ui.theme.MyChatAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -30,6 +31,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ){
                     MyChatApp()
+                    MainNavigation()
                 }
             }
         }
@@ -62,7 +64,7 @@ fun MyChatApp() {
                 LoginUserProfileScreen(navController)
             }
             composable("contacts"){
-                OnboardingContact()
+                OnboardingContacts()
             }
             composable("home") {
                 OnboardingScreen(navController)

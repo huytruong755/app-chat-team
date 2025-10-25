@@ -40,6 +40,10 @@ android {
 }
 
 dependencies {
+
+    //dataset
+    implementation(libs.androidx.datastore.preferences)
+
     // Compose BOM để đồng bộ version
     implementation(platform(libs.androidx.compose.bom))
 

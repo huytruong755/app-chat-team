@@ -14,7 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-//import androidx.compose.ui.input.pointer.motionEventSpy
+import androidx.compose.ui.input.pointer.motionEventSpy
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -31,14 +31,18 @@ fun OnboardingScreen(navController: NavController) {
     val sessionManager = remember { SessionManager(context) }
 
     val isLoggedIn by sessionManager.isLoggedIn.collectAsState(initial = false)
-
-    LaunchedEffect(isLoggedIn) {
-        if (isLoggedIn) {
-            navController.navigate("contacts") {
-                popUpTo("onboarding") { inclusive = true }
-            }
-        }
-    }
+//C2: để thoát ra contacts và test UI
+//    LaunchedEffect(isLoggedIn) {
+//        if (isLoggedIn) {
+//            navController.navigate("contacts") {
+//                popUpTo("onboarding") { inclusive = false }
+//            }
+//        }
+//    }
+//C1:Để thoát ra contacts và test UI
+//    LaunchedEffect(Unit) {
+//        sessionManager.setLoggedIn(false)
+//    }
 
     if (!isLoggedIn) {
 

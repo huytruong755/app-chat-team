@@ -13,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -22,18 +21,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.mychatapp.R
-import com.example.mychatapp.ui.screens.onboarding.utils.SessionManager
-import kotlinx.coroutines.launch
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginUserProfileScreen (navController: NavController) {
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
-
-    val context = LocalContext.current
-    val sessionManager = remember { SessionManager(context) }
-    val scope = rememberCoroutineScope()
 
     //báo lỗi
     var firstNameError by remember { mutableStateOf(false) }
@@ -191,14 +185,17 @@ fun LoginUserProfileScreen (navController: NavController) {
                     lastNameError = isLastNameEmpty
 
                     if (!isFirstNameEmpty && !isLastNameEmpty) {
-                        scope.launch {
-                            sessionManager.setLoggedIn(true)
-                        }
-                        // Chuyển sang màn hình contacts
-                        navController.navigate("contacts") {
+                        //C2: để thoát ra contacts và test UI
+//                        scope.launch {
+//                            sessionManager.setLoggedIn(true)
+//                        }
+//                        // Chuyển sang màn hình contacts
+//                        navController.navigate("contacts") {
+//                            popUpTo("login") { inclusive = true }
+//                        }
+                        navController.navigate("mainScreen") {
                             popUpTo("login") { inclusive = true }
                         }
-//                        navController.navigate("contacts")
                     }
                 },
                 modifier = Modifier

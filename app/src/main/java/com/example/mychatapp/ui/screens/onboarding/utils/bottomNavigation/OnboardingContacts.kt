@@ -30,7 +30,6 @@ import com.example.mychatapp.model.Contact
 @Composable
 fun OnboardingContacts() {
     var searchQuery by remember { mutableStateOf("") }
-    var selectedIndex by remember { mutableIntStateOf(0) }
 
     Scaffold(
         topBar = {
@@ -41,11 +40,6 @@ fun OnboardingContacts() {
                         Icon(Icons.Default.Add, contentDescription = "Add Contact")
                     }
                 }
-            )
-        }, bottomBar = {
-            BottomNavigationBar(
-                selectedIndex = selectedIndex,
-                onItemSelected = { selectedIndex = it }
             )
         }
     ) { padding ->

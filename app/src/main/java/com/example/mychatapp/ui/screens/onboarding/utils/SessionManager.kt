@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.map
 
 val Context.dataStore by preferencesDataStore("user_prefs")
 
+
 class SessionManager(private val context: Context) {
     companion object {
         val IS_LOGGED_IN = booleanPreferencesKey("is_logged_in")

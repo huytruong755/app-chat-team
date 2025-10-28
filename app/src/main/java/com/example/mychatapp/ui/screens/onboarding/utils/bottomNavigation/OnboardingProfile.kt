@@ -9,7 +9,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun OnboardingMores() {
+fun OnboardingProfile() {
     Box(
         modifier = Modifier
             .fillMaxSize()

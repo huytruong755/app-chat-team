@@ -23,12 +23,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.mychatapp.data.sampleContacts
 import com.example.mychatapp.model.Contact
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OnboardingContacts() {
+fun OnboardingContacts(navController: NavController) {
     var searchQuery by remember { mutableStateOf("") }
 
     Scaffold(
@@ -36,7 +38,8 @@ fun OnboardingContacts() {
             TopAppBar(
                 title = { Text("Contacts") },
                 actions = {
-                    IconButton(onClick = { /* TODO: Add Contact */ }) {
+                    IconButton(
+                        onClick = { navController.navigate("addFriend") }) {
                         Icon(Icons.Default.Add, contentDescription = "Add Contact")
                     }
                 }

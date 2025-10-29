@@ -64,15 +64,6 @@ fun MyChatApp() {
             composable("mainScreen"){
                 MainScreen(navController)
             }
-            composable("contacts") {
-                MainScreen(navController)
-            }
-            composable("messages") {
-                OnboardingScreen(navController)
-            }
-            composable("profile") {
-                OnboardingScreen(navController)
-            }
             composable("home") {
                 OnboardingScreen(navController)
             }

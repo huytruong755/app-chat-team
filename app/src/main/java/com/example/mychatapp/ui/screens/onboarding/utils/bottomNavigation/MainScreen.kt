@@ -9,6 +9,8 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.mychatapp.ui.screens.onboarding.utils.bottomNavigation.addFriendScreen.OnboardingAddFriend
+
 
 
 @Composable
@@ -23,9 +25,11 @@ fun MainScreen(navController: NavController) {
             startDestination = "contacts", // ✅ Contacts là màn hình đầu tiên
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable("contacts") { OnboardingContacts() }
+            composable("contacts") { OnboardingContacts(navControllerbottomBar) }
             composable("messages") { OnboardingChats() }
             composable("profile") { OnboardingProfile() }
+            composable("addFriend") { OnboardingAddFriend(navControllerbottomBar)  }
+
         }
     }
 }

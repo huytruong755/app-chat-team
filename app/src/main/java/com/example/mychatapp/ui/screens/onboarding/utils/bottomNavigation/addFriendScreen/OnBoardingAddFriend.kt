@@ -50,7 +50,7 @@ fun OnboardingAddFriend(navController: NavController){
         Spacer(modifier = Modifier.height(120.dp))
 
         Text(
-            text = "Enter Your Phone Number",
+            text = "searching for strangers",
             textAlign = TextAlign.Center,
             fontSize = 28.sp,
             fontWeight = FontWeight.SemiBold,
@@ -63,7 +63,7 @@ fun OnboardingAddFriend(navController: NavController){
         Spacer(modifier = Modifier.height(15.dp))
 
         Text(
-            text = "Please confirm your country code and enter \nyour phone number",
+            text = "Please confirm stranger's country code and \nenter phone number",
             textAlign = TextAlign.Center,
             fontSize = 15.sp,
             color = Color(0xFF000000),

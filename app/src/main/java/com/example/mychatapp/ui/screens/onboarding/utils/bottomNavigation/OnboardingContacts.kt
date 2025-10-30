@@ -39,7 +39,9 @@ fun OnboardingContacts(navController: NavController) {
                 title = { Text("Contacts") },
                 actions = {
                     IconButton(
-                        onClick = { navController.navigate("addFriend") }) {
+                        onClick = { navController.navigate("addFriend")
+                        }
+                    ) {
                         Icon(Icons.Default.Add, contentDescription = "Add Contact")
                     }
                 }

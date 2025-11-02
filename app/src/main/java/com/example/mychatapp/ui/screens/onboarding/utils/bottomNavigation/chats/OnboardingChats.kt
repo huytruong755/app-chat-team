@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -57,11 +58,12 @@ fun OnboardingChats(
         topBar = {
             TopAppBar(
                 title = { Text("Chats") },
-                actions = {
-                    IconButton(onClick = { /* TODO: Thêm icon tạo nhóm / tin nhắn mới */ }) {
-                        Icon(Icons.Default.Search, contentDescription = "Search Icon")
-                    }
-                }
+                //thêm vào chat nhóm nếu phát triển kịp
+//                actions = {
+//                    IconButton(onClick = { /* TODO: Thêm icon tạo nhóm / tin nhắn mới */ }) {
+//                        Icon(Icons.Default.Search, contentDescription = "Search Icon")
+//                    }
+//                }
             )
         }
     ) { padding ->
@@ -81,7 +83,7 @@ fun OnboardingChats(
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp)
+                contentPadding = PaddingValues(vertical = 8.dp)
             ) {
                 // Lọc danh sách theo tên người
                 val filteredChats = chats.filter {
@@ -143,7 +145,10 @@ fun SearchBar(
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
             disabledIndicatorColor = Color.Transparent,
-            cursorColor = Color.Gray
+            cursorColor = Color.Gray,
+            //test thử
+            focusedLeadingIconColor = Color.Gray,
+            unfocusedLeadingIconColor = Color.Gray
         ),
         textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp)
     )
@@ -166,35 +171,40 @@ fun ChatItem(chat: Chat, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(vertical = 10.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xFFF9FAFB))
+            .padding(horizontal = 12.dp, vertical = 10.dp)
             .clickable { onClick() },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Ảnh đại diện hoặc ký tự viết tắt
-        if (chat.avatarUrl != null) {
-            AsyncImage(
-                model = chat.avatarUrl,
-                contentDescription = chat.name,
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(CircleShape)
-            )
-        } else {
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFE5E9FF)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = chat.name.split(" ").map { it.first() }.take(2).joinToString(""),
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1E40AF)
+        Box(modifier = Modifier.size(50.dp)) {
+            // Ảnh đại diện hoặc ký tự viết tắt
+            if (chat.avatarUrl != null) {
+                AsyncImage(
+                    model = chat.avatarUrl,
+                    contentDescription = chat.name,
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
                 )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFE5E9FF)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = chat.name.split(" ").map { it.first() }.take(2).joinToString(""),
+                        color = Color(0xFF1E40AF),
+                        fontWeight = FontWeight.Bold
+                        )
+                }
             }
         }
-
         Spacer(modifier = Modifier.width(16.dp))
 
         Column(modifier = Modifier.weight(1f)) {
@@ -207,8 +217,9 @@ fun ChatItem(chat: Chat, onClick: () -> Unit) {
             )
             Text(
                 text = chat.lastMessage,
+                style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray,
-                fontSize = 14.sp,
+//                fontSize = 14.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -217,9 +228,10 @@ fun ChatItem(chat: Chat, onClick: () -> Unit) {
         // Hiển thị thời gian tin nhắn cuối cùng
         Text(
             text = chat.time,
-            color = Color.Gray,
+            fontWeight = FontWeight.SemiBold,
             fontSize = 12.sp,
-            modifier = Modifier.padding(start = 8.dp)
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }

@@ -2,8 +2,10 @@ package com.example.mychatapp.ui.screens.onboarding.utils.bottomNavigation.addFr
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -83,22 +85,30 @@ fun OnboardingContacts(
                 .background(Color.White)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            // 🔍 Thanh Search dùng composable riêng
+            // Thanh Search dùng composable riêng
             SearchBar(
-             query = searchQuery,
+                query = searchQuery,
                 onQueryChange = { searchQuery = it }
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             // 📱 Danh sách contact
-            LazyColumn {
-                // Lọc danh sách 'contacts' từ state
-                items(contacts.filter {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(vertical = 8.dp)
+            ) {
+                val filteredContacts = contacts.filter {
                     it.name.contains(searchQuery, ignoreCase = true)
-                }) { contact ->
+                }
+
+                items(filteredContacts) { contact ->
                     ContactItem(
-                        contact
+                        contact = contact,
+                        onClick = {
+                            // 👉 Khi user bấm vào contact, backend có thể điều hướng tới màn chat cá nhân
+                            navController.navigate("chatDetail/${contact.id}")
+                        }
                     )
                 }
             }
@@ -125,7 +135,7 @@ fun SearchBar(
         },
         placeholder = {
             Text(
-                text = "Search",
+                text = "Search contacts",
                 color = Color(0xFF9CA3AF),
                 fontSize = 14.sp
             )
@@ -151,11 +161,20 @@ fun SearchBar(
 }
 
 @Composable
-fun ContactItem(contact: Contact) {
+fun ContactItem(
+    contact: Contact,
+    onClick: () -> Unit = {}
+    ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp),
+            .padding(vertical = 10.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xFFF9FAFB))
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .clickable { onClick(
+                //chuyển hướng tới khung chat
+            ) },
         verticalAlignment = Alignment.CenterVertically
     ) {
         // 🖼 Ảnh đại diện hoặc chữ viết tắt
@@ -199,7 +218,9 @@ fun ContactItem(contact: Contact) {
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        Column {
+        Column (
+            modifier = Modifier.weight(1f)
+        ){
             Text(
                 text = contact.name,
                 fontWeight = FontWeight.SemiBold,
@@ -210,7 +231,9 @@ fun ContactItem(contact: Contact) {
             Text(
                 text = contact.status,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
+                color = Color.Gray,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

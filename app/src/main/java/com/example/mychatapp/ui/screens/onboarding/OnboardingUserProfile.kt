@@ -185,16 +185,11 @@ fun LoginUserProfileScreen (navController: NavController) {
                     lastNameError = isLastNameEmpty
 
                     if (!isFirstNameEmpty && !isLastNameEmpty) {
-                        //C2: để thoát ra contacts và test UI
-//                        scope.launch {
-//                            sessionManager.setLoggedIn(true)
-//                        }
-//                        // Chuyển sang màn hình contacts
-//                        navController.navigate("contacts") {
-//                            popUpTo("login") { inclusive = true }
-//                        }
                         navController.navigate("mainScreen") {
-                            popUpTo("login") { inclusive = true }
+                            popUpTo(navController.graph.startDestinationRoute!!) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
                         }
                     }
                 },

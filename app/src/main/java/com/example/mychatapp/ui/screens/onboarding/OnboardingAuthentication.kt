@@ -45,6 +45,7 @@ fun PhoneNumberAuthentication(navController: NavController) {
 //    remember { ... } giúp lưu giữ (ghi nhớ) giá trị state này trong suốt quá trình recomposition (vẽ lại UI).
 //    Nếu không có remember, mỗi lần Compose vẽ lại, biến đó sẽ bị khởi tạo lại, khiến giá trị người dùng nhập (ví dụ trong TextField) bị mất.
     var phoneNumber by remember { mutableStateOf("") }
+    var countryCode by remember { mutableStateOf("+84") }
     val context = LocalContext.current
 
     Column(
@@ -113,6 +114,7 @@ fun PhoneNumberAuthentication(navController: NavController) {
                             setPadding(0,0,0,0)
 
                             setOnCountryChangeListener {
+                                countryCode = "+" + this.selectedCountryCode
                                 this.post {
                                     this.requestLayout()
                                     this.invalidate()
@@ -166,15 +168,10 @@ fun PhoneNumberAuthentication(navController: NavController) {
             }
         }
         Spacer(modifier = Modifier.height(30.dp))
-        val onStartClicked =
-            {
-                val countryCode = "+84" // hoặc countryCodePicker.selectedCountryCodeWithPlus nếu bạn có biến đó
+        Button(
+            onClick = {
                 var phone = phoneNumber.trim()
-
-                // Nếu số bắt đầu bằng 0 thì bỏ đi (áp dụng cho nhiều vùng, đặc biệt là Việt Nam)
-                if (phone.startsWith("0")) {
-                    phone = phone.drop(1)
-                }
+                if (phone.startsWith("0")) phone = phone.drop(1)
 
                 val fullPhone = "$countryCode$phone"
                 val error = PhoneValidator.validatePhoneNumber(phoneNumber, countryCode)
@@ -182,32 +179,30 @@ fun PhoneNumberAuthentication(navController: NavController) {
                 if (error != null) {
                     Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
                 } else {
+                    //TODO: Gọi API hoặc ViewModel để gửi mã xác thực
+                    Toast.makeText(
+                        context,
+                        "Sending verification code to: $fullPhone",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
                     navController.navigate("NumberCode/$fullPhone")
                 }
-            }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+        )
         //dùng Retrofit để gọi API và ViewModel để xử lý logic.
         //hiện tại chưa có
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Các phần tử khác...
-            Button(
-                onClick = onStartClicked,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-            ) {
-                Text(
-                    text = "Continue",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
+        {
+            Text(
+                text = "Continue",
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }

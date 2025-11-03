@@ -39,10 +39,15 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MyChatApp() {
     val navController = rememberNavController()
+
+    val skipLogin = true
+
     MyChatAppTheme {
         NavHost(
             navController = navController,
-            startDestination = "onboarding"
+            //startDestination = "onboarding"
+            startDestination = if (skipLogin) "mainScreen" else "onboarding"
+
         ) {
             composable("onboarding") {
                 OnboardingScreen(navController)

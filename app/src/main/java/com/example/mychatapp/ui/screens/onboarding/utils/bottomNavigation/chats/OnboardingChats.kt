@@ -100,7 +100,7 @@ fun OnboardingChats(
                             // → Ở đó App sẽ gọi API:
                             //    GET /api/chat/{chat.id}
                             //    hoặc kết nối SignalR /chathub
-                            navController.navigate("chatDetail/${chat.id}")
+                            navController.navigate("chat_detail/{receiverId}/{receiverName}")
                         }
                     )
                 }
@@ -167,7 +167,9 @@ fun SearchBar(
  *      }
  */
 @Composable
-fun ChatItem(chat: Chat, onClick: () -> Unit) {
+fun ChatItem(
+    chat: Chat, onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()

@@ -103,7 +103,7 @@ fun PhoneNumberAuthentication(navController: NavController) {
                 AndroidView(
                     factory = { context ->
                         com.hbb20.CountryCodePicker(context).apply {
-                            setDefaultCountryUsingNameCode("VN")
+                            setAutoDetectedCountry(true)
                             setShowPhoneCode(true)
                             setCcpDialogShowPhoneCode(true)
                             ccpDialogShowFlag = true

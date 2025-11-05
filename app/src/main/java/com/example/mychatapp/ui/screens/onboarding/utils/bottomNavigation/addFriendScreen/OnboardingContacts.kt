@@ -107,7 +107,8 @@ fun OnboardingContacts(
                         contact = contact,
                         onClick = {
                             // 👉 Khi user bấm vào contact, backend có thể điều hướng tới màn chat cá nhân
-                            navController.navigate("chatDetail/${contact.id}")
+                            //TODO: Mỗi ACC từ Contacs sang Mores của mỗi người
+                            navController.navigate("chat_detail/{receiverId}/{receiverName}")
                         }
                     )
                 }

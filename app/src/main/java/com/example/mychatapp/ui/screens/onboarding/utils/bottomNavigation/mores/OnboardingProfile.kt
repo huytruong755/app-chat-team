@@ -8,9 +8,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+//import com.example.mychatapp.model.ProfileViewModel
 
 @Composable
-fun OnboardingProfile(bottomNavController: NavController) {
+fun OnboardingProfile(
+    navController: NavController,
+//    viewModel: ProfileViewModel = viewModel()
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()

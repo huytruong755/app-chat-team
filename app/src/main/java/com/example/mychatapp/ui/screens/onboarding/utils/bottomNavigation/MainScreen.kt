@@ -17,7 +17,7 @@ import com.example.mychatapp.ui.screens.onboarding.utils.bottomNavigation.addFri
 import com.example.mychatapp.ui.screens.onboarding.utils.bottomNavigation.addFriendScreen.OnboardingContacts
 import com.example.mychatapp.ui.screens.onboarding.utils.bottomNavigation.chats.OnboardingChatDetail
 import com.example.mychatapp.ui.screens.onboarding.utils.bottomNavigation.chats.OnboardingChats
-import com.example.mychatapp.ui.screens.onboarding.utils.bottomNavigation.mores.OnboardingProfile
+import com.example.mychatapp.ui.screens.onboarding.utils.bottomNavigation.mores.OnboardingSelfProfile
 
 @Composable
 fun MainScreen(navController: NavController) {
@@ -46,7 +46,7 @@ fun MainScreen(navController: NavController) {
                 OnboardingChats(bottomNavController)
             }
             composable("profile") {
-                OnboardingProfile(bottomNavController)
+                OnboardingSelfProfile(bottomNavController)
             }
             composable("addFriend") {
                 OnboardingAddFriend(bottomNavController)
@@ -97,7 +97,6 @@ fun MainScreen(navController: NavController) {
                     receiverName = friendName
                 )
             }
-
         }
     }
 }

@@ -19,10 +19,12 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.mychatapp.model.SelfProfileViewModel
 import com.hbb20.CountryCodePicker
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnboardingSelfProfile(
+    navController: NavController,
     viewModel: SelfProfileViewModel = viewModel(),
     onBackClick: (() -> Unit)? = null,
     // navigation callbacks cho từng mục
@@ -38,7 +40,7 @@ fun OnboardingSelfProfile(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("More", fontSize = 20.sp) },
+                title = { Text("Profile", fontSize = 20.sp) },
                 navigationIcon = {
                     onBackClick?.let {
                         IconButton(onClick = it) {
@@ -90,7 +92,7 @@ fun OnboardingSelfProfile(
                                 // setCountryForNameCode("VN")
                                 // Lưu ý: fullNumber nhận định dạng +...
                                 fullNumber = profile.phoneNumber
-                                setClickable(false)
+                                isClickable = false
                                 setCcpClickable(false)
                             }
                         },
@@ -100,7 +102,7 @@ fun OnboardingSelfProfile(
                 }
             }
 
-            Divider()
+            HorizontalDivider()
 
             Spacer(modifier = Modifier.height(8.dp))
 

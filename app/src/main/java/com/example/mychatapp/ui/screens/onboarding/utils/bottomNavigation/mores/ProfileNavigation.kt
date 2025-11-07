@@ -1,17 +1,20 @@
 package com.example.mychatapp.ui.screens.onboarding.utils.bottomNavigation.mores
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.mychatapp.R
 
 /**
  * Component chứa danh sách navigation item dùng cho màn "More"
@@ -34,11 +37,11 @@ fun ProfileNavigationList(
     ) {
         //them logo anh
         ProfileNavItem(icon = Icons.Default.Person, title = "Account", onClick = onAccountClick)
-        ProfileNavItem(icon = Icons.Default.Chat, title = "Chats", onClick = onChatsClick)
+        ProfileNavItem(icon = Icons.AutoMirrored.Filled.Chat, title = "Chats", onClick = onChatsClick)
         ProfileNavItem(icon = Icons.Default.Security, title = "Privacy", onClick = onPrivacyClick)
         ProfileNavItem(icon = Icons.Default.Storage, title = "Data Usage", onClick = onDataUsageClick)
-        Divider(modifier = Modifier.padding(vertical = 8.dp))
-        ProfileNavItem(icon = Icons.Default.Help, title = "Help", onClick = onHelpClick)
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        ProfileNavItem(icon = Icons.AutoMirrored.Filled.Help, title = "Help", onClick = onHelpClick)
     }
 }
 
@@ -62,10 +65,10 @@ fun ProfileNavItem(
             style = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp),
             modifier = Modifier.weight(1f)
         )
-        Icon(
-            Icons.AutoMirrored.Filled.ArrowBack,
+        Image(
+            painter = painterResource(id = R.drawable.vector1),
             contentDescription = "Arrow",
-            modifier = Modifier.size(20.dp).rotate(180f)
+            modifier = Modifier.size(20.dp)
         )
     }
 }

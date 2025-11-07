@@ -2,6 +2,7 @@ package com.example.mychatapp.data
 
 import com.example.mychatapp.model.SelfProfile
 
+
 /**
  * ==========================================
  * SAMPLE DATA: SelfProfile (mô phỏng dữ liệu người dùng hiện tại)

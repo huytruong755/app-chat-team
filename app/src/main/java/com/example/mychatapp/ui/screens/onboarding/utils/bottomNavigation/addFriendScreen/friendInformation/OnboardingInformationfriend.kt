@@ -57,7 +57,7 @@ fun FriendInformationScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.navigate("messages") }) {
+                    IconButton(onClick = { navController.navigate("addFriend") }) {
                         Icon(
                             painter = painterResource(id = R.drawable.vector),
                             contentDescription = "Back",
@@ -172,7 +172,9 @@ fun FriendInformationScreen(
                         chatViewModel.addChat(friend)
 
                         // 🟦 Điều hướng sang khung chat
-                        navController.navigate("chat_detail/${friend.id}/${friend.name}")
+                        navController.navigate("chat_detail/${friend.id}/${friend.name}"){
+                            popUpTo("contacts")
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0057FF)),
                     shape = RoundedCornerShape(12.dp),

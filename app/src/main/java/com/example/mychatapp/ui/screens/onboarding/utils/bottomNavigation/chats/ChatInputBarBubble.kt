@@ -14,7 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.example.mychatapp.model.ChatMessage
+import com.example.mychatapp.model.modelData.ChatMessage
 import androidx.compose.material.icons.automirrored.filled.Send
 
 

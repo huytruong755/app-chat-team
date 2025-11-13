@@ -1,6 +1,6 @@
 package com.example.mychatapp.data
 
-import com.example.mychatapp.model.Contact
+import com.example.mychatapp.model.modelData.Contact
 
 // --- DỮ LIỆU GIẢ CHO TEST UI---
 val sampleContacts = listOf(

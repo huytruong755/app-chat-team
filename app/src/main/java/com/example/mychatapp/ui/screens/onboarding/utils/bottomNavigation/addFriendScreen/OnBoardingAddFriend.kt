@@ -44,11 +44,10 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.example.mychatapp.R
 import com.example.mychatapp.ui.screens.onboarding.utils.PhoneValidator
-import com.hbb20.CountryCodePicker
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OnboardingAddFriend(navController: NavController) {
+fun OnboardingAddFriend(bottomNavController: NavController) {
     var phoneNumber by remember { mutableStateOf("") }
     // SỬA LỖI LOGIC: Tạo state cho mã quốc gia, mặc định là "VN" (+84)
     var countryCode by remember { mutableStateOf("+84") }
@@ -59,7 +58,7 @@ fun OnboardingAddFriend(navController: NavController) {
             TopAppBar(
                 title = {},
                 navigationIcon = {
-                    IconButton(onClick = { navController.navigate("contacts") }) {
+                    IconButton(onClick = { bottomNavController.navigate("contacts") }) {
                         Icon(
                             painter = painterResource(id = R.drawable.vector),
                             contentDescription = "Back",
@@ -130,8 +129,8 @@ fun OnboardingAddFriend(navController: NavController) {
                 ) {
                     AndroidView(
                         factory = { context ->
-                            CountryCodePicker(context).apply {
-                                setDefaultCountryUsingNameCode("VN")
+                            com.hbb20.CountryCodePicker(context).apply {
+                                setAutoDetectedCountry(true)
                                 setShowPhoneCode(true)
                                 setCcpDialogShowPhoneCode(true)
                                 ccpDialogShowFlag = true
@@ -208,7 +207,9 @@ fun OnboardingAddFriend(navController: NavController) {
 
                     // Sử dụng `countryCode` từ state
                     val friendPhoneNumber = "$countryCode$phone"
-                    val error = PhoneValidator.validatePhoneNumber(friendPhoneNumber, countryCode)
+
+                    //
+                    val error = PhoneValidator.validatePhoneNumber(phone, countryCode)
 
                     if (error != null) {
                         Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
@@ -219,7 +220,7 @@ fun OnboardingAddFriend(navController: NavController) {
                             "Finding and Adding friend: $friendPhoneNumber",
                             Toast.LENGTH_SHORT
                         ).show()
-                        navController.navigate("NumberCode/$friendPhoneNumber")
+                        bottomNavController.navigate("friendInformation/$friendPhoneNumber")
                     }
                 },
                 modifier = Modifier

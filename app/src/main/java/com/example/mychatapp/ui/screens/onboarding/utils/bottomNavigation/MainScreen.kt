@@ -12,12 +12,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.mychatapp.ui.screens.onboarding.AuthenticationEnterCode
 import com.example.mychatapp.ui.screens.onboarding.utils.bottomNavigation.addFriendScreen.OnboardingAddFriend
 import com.example.mychatapp.ui.screens.onboarding.utils.bottomNavigation.addFriendScreen.OnboardingContacts
+import com.example.mychatapp.ui.screens.onboarding.utils.bottomNavigation.addFriendScreen.friendInformation.FriendInformationScreen
 import com.example.mychatapp.ui.screens.onboarding.utils.bottomNavigation.chats.OnboardingChatDetail
 import com.example.mychatapp.ui.screens.onboarding.utils.bottomNavigation.chats.OnboardingChats
 import com.example.mychatapp.ui.screens.onboarding.utils.bottomNavigation.mores.OnboardingSelfProfile
+import com.example.mychatapp.ui.screens.onboarding.utils.bottomNavigation.mores.account.ProfileSelfAccount
 
 @Composable
 fun MainScreen(navController: NavController) {
@@ -51,16 +52,9 @@ fun MainScreen(navController: NavController) {
             composable("addFriend") {
                 OnboardingAddFriend(bottomNavController)
             }
-            composable (
-                route = "NumberCode/{friendPhoneNumber}",
-                arguments = listOf(navArgument("friendPhoneNumber") { type = NavType.StringType })
-            ){ backStackEntry ->
-                // lấy argument "friendPhoneNumber" và gán vào biến tên "phoneNumber"
-                val phoneNumber = backStackEntry.arguments?.getString("friendPhoneNumber") ?: ""
-
-                // truyền biến "phoneNumber" (ở trên) vào đây,
-                // không phải truyền "friendPhoneNumber" (là tên của key)
-                AuthenticationEnterCode(bottomNavController, phoneNumber)
+            composable("friendInformation/{friendPhoneNumber}") { backStackEntry ->
+                val phone = backStackEntry.arguments?.getString("friendPhoneNumber") ?: ""
+                FriendInformationScreen(navController = bottomNavController, friendPhoneNumber = phone)
             }
             composable("chats") { OnboardingChats(navController) }
             composable(
@@ -97,6 +91,11 @@ fun MainScreen(navController: NavController) {
                     receiverName = friendName
                 )
             }
+            //selfAccount
+            composable("selfAccount"){
+                ProfileSelfAccount(bottomNavController)
+            }
+
         }
     }
 }

@@ -41,6 +41,8 @@ android {
 
 dependencies {
 
+    implementation (libs.androidx.activity.compose.v190)
+
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 
     //Coil library

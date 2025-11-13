@@ -23,8 +23,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.example.mychatapp.model.Chat
-import com.example.mychatapp.model.ChatViewModel
+import com.example.mychatapp.model.modelData.Chat
+import com.example.mychatapp.model.viewModel.ChatViewModel
 
 /**
  * ================================
@@ -96,11 +96,11 @@ fun OnboardingChats(
                         chat = chat,
                         onClick = {
                             // Khi bấm vào một đoạn chat:
-                            // → Điều hướng đến màn hình chi tiết chat
-                            // → Ở đó App sẽ gọi API:
+                            // Điều hướng đến màn hình chi tiết chat
+                            // Ở đó App sẽ gọi API:
                             //    GET /api/chat/{chat.id}
                             //    hoặc kết nối SignalR /chathub
-                            navController.navigate("chat_detail/{receiverId}/{receiverName}")
+                            navController.navigate("chat_detail/${chat.id}/${chat.name}")
                         }
                     )
                 }

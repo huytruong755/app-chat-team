@@ -1,5 +1,8 @@
 package com.example.mychatapp.ui.screens.onboarding.utils.bottomNavigation.chats
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.mychatapp.R
-import com.example.mychatapp.model.ChatListViewModel
+import com.example.mychatapp.model.viewModel.ChatListViewModel
 import kotlinx.coroutines.launch
 
 /**
@@ -42,9 +45,24 @@ fun OnboardingChatDetail(
     var messageText by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
 
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickMultipleVisualMedia(),
+        onResult = { uris ->
+            // 'uris' là một List<Uri> chứa tất cả ảnh người dùng đã chọn
+            if (uris.isNotEmpty()) {
+                coroutineScope.launch {
+                    uris.forEach { uri ->
+                        // Gọi ViewModel để xử lý từng ảnh
+                        viewModel.uploadImageMessage(uri, senderId, receiverId)
+                    }
+                }
+            }
+        }
+    )
+
     // ✅ Lấy lịch sử tin nhắn khi mở khung chat
     LaunchedEffect(receiverId) {
-        viewModel.loadChatHistory(senderId, receiverId)
+        viewModel.loadChatHistory(receiverId)
     }
 
     Scaffold(
@@ -79,6 +97,9 @@ fun OnboardingChatDetail(
                 onAttachClick = {
                     // Mở ImagePicker thật → chọn ảnh
                     // Gọi viewModel.uploadImageMessage(selectedImageUri, senderId, receiverId)
+                    photoPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
                 }
             )
         }

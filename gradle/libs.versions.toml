@@ -1,4 +1,5 @@
 [versions]
+activityComposeVersion = "1.9.0"
 agp = "8.13.0"
 ccpVersion = "2.5.0"
 coilCompose = "2.7.0"
@@ -24,6 +25,7 @@ imagepicker = "2.3.22"
 uiVersion = "1.6.0"
 
 [libraries]
+androidx-activity-compose-v190 = { module = "androidx.activity:activity-compose", version.ref = "activityComposeVersion" }
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 androidx-compose-material3-vyourcomposematerial3version = { module = "androidx.compose.material3:material3", version.ref = "material3Version" }
 androidx-compose-ui-v160 = { module = "androidx.compose.ui:ui", version.ref = "uiVersion" }

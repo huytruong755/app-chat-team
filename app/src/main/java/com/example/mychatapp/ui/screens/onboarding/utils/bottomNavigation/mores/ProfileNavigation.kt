@@ -4,7 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.Icons.Default
 import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -26,9 +26,7 @@ import com.example.mychatapp.R
 @Composable
 fun ProfileNavigationList(
     onAccountClick: () -> Unit,
-    onChatsClick: () -> Unit,
     onPrivacyClick: () -> Unit,
-    onDataUsageClick: () -> Unit,
     onHelpClick: () -> Unit
 ) {
     Column(
@@ -36,10 +34,8 @@ fun ProfileNavigationList(
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         //them logo anh
-        ProfileNavItem(icon = Icons.Default.Person, title = "Account", onClick = onAccountClick)
-        ProfileNavItem(icon = Icons.AutoMirrored.Filled.Chat, title = "Chats", onClick = onChatsClick)
-        ProfileNavItem(icon = Icons.Default.Security, title = "Privacy", onClick = onPrivacyClick)
-        ProfileNavItem(icon = Icons.Default.Storage, title = "Data Usage", onClick = onDataUsageClick)
+        ProfileNavItem(icon = Default.Person, title = "Account", onClick = onAccountClick)
+        ProfileNavItem(icon = Default.Security, title = "Privacy", onClick = onPrivacyClick)
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         ProfileNavItem(icon = Icons.AutoMirrored.Filled.Help, title = "Help", onClick = onHelpClick)
     }

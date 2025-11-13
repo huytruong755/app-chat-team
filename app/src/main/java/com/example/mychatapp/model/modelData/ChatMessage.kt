@@ -1,4 +1,4 @@
-package com.example.mychatapp.model
+package com.example.mychatapp.model.modelData
 
 /**
  * ====================================

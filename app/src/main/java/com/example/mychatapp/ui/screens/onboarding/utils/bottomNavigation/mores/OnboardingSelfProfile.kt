@@ -29,9 +29,7 @@ fun OnboardingSelfProfile(
     onBackClick: (() -> Unit)? = null,
     // navigation callbacks cho từng mục
     onAccountClick: () -> Unit = {},
-    onChatsClick: () -> Unit = {},
     onPrivacyClick: () -> Unit = {},
-    onDataUsageClick: () -> Unit = {},
     onHelpClick: () -> Unit = {}
 ) {
     val profile by viewModel.uiState.collectAsState()
@@ -108,10 +106,11 @@ fun OnboardingSelfProfile(
 
             // Gọi component navigation list (ProfileNavigation.kt)
             ProfileNavigationList(
-                onAccountClick = { onAccountClick() },
-                onChatsClick = { onChatsClick() },
+                onAccountClick = {
+                    navController.navigate("selfAccount")
+                    onAccountClick()
+                },
                 onPrivacyClick = { onPrivacyClick() },
-                onDataUsageClick = { onDataUsageClick() },
                 onHelpClick = {
                     Toast.makeText(context, "Open Help", Toast.LENGTH_SHORT).show()
                     onHelpClick()

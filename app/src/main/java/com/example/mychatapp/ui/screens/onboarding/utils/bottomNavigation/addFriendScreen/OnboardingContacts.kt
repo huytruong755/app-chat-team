@@ -48,8 +48,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.example.mychatapp.model.Contact
-import com.example.mychatapp.model.ContactViewModel
+import com.example.mychatapp.model.modelData.Contact
+import com.example.mychatapp.model.viewModel.ContactViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -108,7 +108,7 @@ fun OnboardingContacts(
                         onClick = {
                             // 👉 Khi user bấm vào contact, backend có thể điều hướng tới màn chat cá nhân
                             //TODO: Mỗi ACC từ Contacs sang Mores của mỗi người
-                            navController.navigate("chat_detail/{receiverId}/{receiverName}")
+                            navController.navigate("chat_detail/${contact.id}/${contact.name}")
                         }
                     )
                 }

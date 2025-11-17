@@ -7,3 +7,4 @@ data class Contact(
     val isOnline: Boolean,
     val avatarUrl: String?
 )
+

@@ -20,11 +20,14 @@ import com.example.mychatapp.model.SelfProfileViewModel
 import com.hbb20.CountryCodePicker
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
+import com.example.mychatapp.ui.screens.onboarding.utils.SessionManager
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnboardingSelfProfile(
-    navController: NavController,
+    mainNavController: NavController,
+    bottomNavController: NavController,
     viewModel: SelfProfileViewModel = viewModel(),
     onBackClick: (() -> Unit)? = null,
     // navigation callbacks cho từng mục
@@ -34,6 +37,9 @@ fun OnboardingSelfProfile(
 ) {
     val profile by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+
+    val sessionManager = remember { SessionManager(context) }
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -86,9 +92,6 @@ fun OnboardingSelfProfile(
                         factory = { ctx ->
                             CountryCodePicker(ctx).apply {
                                 setAutoDetectedCountry(true)
-                                // Nếu muốn mặc định VN, có thể set:
-                                // setCountryForNameCode("VN")
-                                // Lưu ý: fullNumber nhận định dạng +...
                                 fullNumber = profile.phoneNumber
                                 isClickable = false
                                 setCcpClickable(false)
@@ -107,13 +110,26 @@ fun OnboardingSelfProfile(
             // Gọi component navigation list (ProfileNavigation.kt)
             ProfileNavigationList(
                 onAccountClick = {
-                    navController.navigate("selfAccount")
+                    bottomNavController.navigate("selfAccount")
                     onAccountClick()
                 },
                 onPrivacyClick = { onPrivacyClick() },
                 onHelpClick = {
                     Toast.makeText(context, "Open Help", Toast.LENGTH_SHORT).show()
                     onHelpClick()
+                },
+                onLogoutClick = {
+                    coroutineScope.launch {
+                        // 1. Xóa session
+                        sessionManager.logout()
+
+                        // 2. Dùng mainNavController để quay về Onboarding
+                        mainNavController.navigate("onboarding") {
+                            // Xóa toàn bộ back stack
+                            popUpTo(0) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
                 }
             )
         }

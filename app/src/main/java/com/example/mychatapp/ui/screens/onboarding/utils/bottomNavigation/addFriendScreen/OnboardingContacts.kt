@@ -57,7 +57,7 @@ import com.example.mychatapp.model.viewModel.ContactViewModel
 fun OnboardingContacts(
     navController: NavController,
     viewModel: ContactViewModel = viewModel()
-    ) {
+) {
     var searchQuery by remember { mutableStateOf("") }
 
     // Lấy danh sách liên hệ từ ViewModel
@@ -165,7 +165,7 @@ fun SearchBar(
 fun ContactItem(
     contact: Contact,
     onClick: () -> Unit = {}
-    ) {
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()

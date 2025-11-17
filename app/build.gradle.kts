@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.gms.services)
 }
 
 android {
@@ -37,57 +38,103 @@ android {
     buildFeatures {
         compose = true
     }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.0"
+    }
 }
 
 dependencies {
-
-    implementation (libs.androidx.activity.compose.v190)
-
+//    implementation(libs.retrofit.core)
+//    implementation(libs.retrofit.converter.gson)
+//    implementation(libs.signalr.client)
+//
+//    implementation (libs.androidx.activity.compose.v190)
+//
+//    implementation(libs.androidx.lifecycle.viewmodel.compose)
+//
+//    //Coil library
+//    implementation(libs.coil.compose.v260)
+//
+//    //dataset
+//    implementation(libs.androidx.datastore.preferences)
+//
+//    // Compose BOM để đồng bộ version
+//    implementation(platform(libs.androidx.compose.bom))
+//
+//    // Core Compose UI
+//    implementation(libs.androidx.compose.ui)
+//    implementation(libs.androidx.compose.ui.graphics)
+//    implementation(libs.androidx.compose.ui.tooling.preview)
+//    implementation(libs.androidx.material3)
+//    debugImplementation(libs.androidx.compose.ui.tooling)
+//    debugImplementation(libs.androidx.compose.ui.test.manifest)
+//
+//    // Material 3
+//    implementation(libs.material3)
+//
+//    // Icons
+//    implementation(libs.material.icons.extended)
+//
+//    // Navigation
+//    implementation(libs.androidx.navigation.compose)
+//
+//    // Activity Compose
+//    implementation(libs.androidx.activity.compose)
+//
+//    // Lifecycle
+//    implementation(libs.androidx.lifecycle.runtime.ktx)
+//
+//    // Coil (hiển thị ảnh)
+//    implementation(libs.coil.compose)
+//
+//    // Country & image picker (của bạn)
+//    implementation(libs.country.code.picker)
+//    implementation(libs.image.picker)
+//
+//    // Unit tests
+//    testImplementation(libs.junit)
+//    androidTestImplementation(libs.androidx.junit)
+//    androidTestImplementation(libs.androidx.espresso.core)
+//    androidTestImplementation(platform(libs.androidx.compose.bom))
+//    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 
-    //Coil library
-    implementation(libs.coil.compose.v260)
-
-    //dataset
     implementation(libs.androidx.datastore.preferences)
 
-    // Compose BOM để đồng bộ version
     implementation(platform(libs.androidx.compose.bom))
 
-    // Core Compose UI
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.material3)
+
+    implementation(libs.material.icons.extended)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.navigation.compose)
+
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    // Material 3
-    implementation(libs.material3)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
 
-    // Icons
-    implementation(libs.material.icons.extended)
-
-    // Navigation
-    implementation(libs.androidx.navigation.compose)
-
-    // Activity Compose
-    implementation(libs.androidx.activity.compose)
-
-    // Lifecycle
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-
-    // Coil (hiển thị ảnh)
     implementation(libs.coil.compose)
+    implementation(libs.coil.compose.v260)
 
-    // Country & image picker (của bạn)
     implementation(libs.country.code.picker)
     implementation(libs.image.picker)
 
-    // Unit tests
+    implementation(libs.retrofit.core)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.signalr.client)
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth.ktx)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
 }

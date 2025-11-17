@@ -1,5 +1,6 @@
 package com.example.mychatapp.ui.screens.onboarding
 
+import android.app.Activity
 import com.example.mychatapp.ui.screens.onboarding.utils.PhoneValidator
 import android.widget.Toast
 import androidx.compose.foundation.border
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -37,6 +39,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
+import com.google.firebase.FirebaseException
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.PhoneAuthCredential
+import com.google.firebase.auth.PhoneAuthOptions
+import com.google.firebase.auth.PhoneAuthProvider
+import java.util.concurrent.TimeUnit
 
 @Composable
 fun PhoneNumberAuthentication(navController: NavController) {
@@ -47,6 +55,42 @@ fun PhoneNumberAuthentication(navController: NavController) {
     var phoneNumber by remember { mutableStateOf("") }
     var countryCode by remember { mutableStateOf("+84") }
     val context = LocalContext.current
+
+    val activity = LocalContext.current as Activity
+    var isLoading by remember { mutableStateOf(false) }
+    val auth = FirebaseAuth.getInstance()
+
+    val callbacks = remember {
+        object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+
+            // Khi gửi OTP thành công
+            override fun onCodeSent(
+                verificationId: String,
+                token: PhoneAuthProvider.ForceResendingToken
+            ) {
+                isLoading = false
+                Toast.makeText(context, "OTP Sent!", Toast.LENGTH_SHORT).show()
+                // Điều hướng sang màn hình OTP, mang theo SĐT và ID phiên
+                val fullPhone = "$countryCode${phoneNumber.trim().dropWhile { it == '0' }}"
+                navController.navigate("NumberCode/$fullPhone/$verificationId")
+            }
+
+            // Khi xác thực thất bại
+            override fun onVerificationFailed(e: FirebaseException) {
+                isLoading = false
+                Toast.makeText(context, "Failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+
+            // (Trường hợp hiếm) Tự động xác thực thành công (không cần OTP)
+            override fun onVerificationCompleted(credential: PhoneAuthCredential) {
+                // Chúng ta sẽ xử lý việc đăng nhập ở màn hình OTP
+                // Nhưng nếu nó tự động xong, ta cũng có thể cho qua
+                isLoading = false
+                Toast.makeText(context, "Auto-Verified!", Toast.LENGTH_SHORT).show()
+                // TODO: Xử lý đăng nhập ngay tại đây nếu muốn
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -179,26 +223,27 @@ fun PhoneNumberAuthentication(navController: NavController) {
                 if (error != null) {
                     Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
                 } else {
-                    //TODO: Gọi API hoặc ViewModel để gửi mã xác thực
-                    Toast.makeText(
-                        context,
-                        "Sending verification code to: $fullPhone",
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-                    navController.navigate("NumberCode/$fullPhone")
+                    isLoading = true
+                    val options = PhoneAuthOptions.newBuilder(auth)
+                        .setPhoneNumber(fullPhone)
+                        .setTimeout(60L, TimeUnit.SECONDS) // Thời gian chờ
+                        .setActivity(activity) // Activity
+                        .setCallbacks(callbacks) // Callbacks để lắng nghe
+                        .build()
+                    PhoneAuthProvider.verifyPhoneNumber(options)
                 }
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp)
+                .height(56.dp),
+            enabled = !isLoading,
+            colors = ButtonDefaults.buttonColors(
+                disabledContainerColor = Color.Gray
+            )
         )
-        //dùng Retrofit để gọi API và ViewModel để xử lý logic.
-        //hiện tại chưa có
-
         {
             Text(
-                text = "Continue",
+                text = if (isLoading) "Sending..." else "Continue",
                 color = Color.White,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium

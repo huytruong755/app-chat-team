@@ -203,7 +203,7 @@ fun ChatItem(
                         text = chat.name.split(" ").map { it.first() }.take(2).joinToString(""),
                         color = Color(0xFF1E40AF),
                         fontWeight = FontWeight.Bold
-                        )
+                    )
                 }
             }
         }

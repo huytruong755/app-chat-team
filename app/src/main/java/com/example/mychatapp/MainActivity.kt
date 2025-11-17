@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
 fun MyChatApp() {
     val navController = rememberNavController()
 
-    val skipLogin = true
+    val skipLogin = false
 
     MyChatAppTheme {
         NavHost(
@@ -56,15 +56,23 @@ fun MyChatApp() {
                 PhoneNumberAuthentication(navController)
             }
             composable (
-                route = "NumberCode/{phoneNumber}",
-                arguments = listOf(navArgument("phoneNumber") { type = NavType.StringType })
+                route = "NumberCode/{phoneNumber}/{verificationId}",
+                arguments = listOf(
+                    navArgument("phoneNumber") { type = NavType.StringType },
+                    navArgument("verificationId") { type = NavType.StringType }
+                    )
             ){ backStackEntry ->
                 val phoneNumber = backStackEntry.arguments?.getString("phoneNumber") ?: ""
+                val verificationId = backStackEntry.arguments?.getString("verificationId") ?: ""
 
-                AuthenticationEnterCode(navController, phoneNumber)
+                AuthenticationEnterCode(navController, phoneNumber,verificationId)
             }
-            composable("UserProfile"){
-                LoginUserProfileScreen(navController)
+            composable("UserProfile/{phoneNumber}") { backStackEntry ->
+                val phoneNumber = backStackEntry.arguments?.getString("phoneNumber") ?: ""
+                LoginUserProfileScreen(
+                    navController = navController,
+                    phoneNumber = phoneNumber
+                )
             }
             composable("mainScreen"){
                 MainScreen(navController)

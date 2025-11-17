@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -21,11 +22,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.mychatapp.R
+import com.example.mychatapp.model.modelData.Contact
+import com.example.mychatapp.model.viewModel.ContactRepository
+import com.example.mychatapp.ui.screens.onboarding.utils.SessionManager
+import kotlinx.coroutines.launch
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginUserProfileScreen (navController: NavController) {
+fun LoginUserProfileScreen (
+    navController: NavController,
+    phoneNumber: String
+) {
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
 
@@ -33,6 +41,12 @@ fun LoginUserProfileScreen (navController: NavController) {
     var firstNameError by remember { mutableStateOf(false) }
     var lastNameError by remember { mutableStateOf(false) }
 
+    val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
+    val coroutineScope = rememberCoroutineScope()
+    // Lưu ý: Chúng ta đang gọi trực tiếp Repository
+    // (Đây là cách làm đúng với Singleton)
+    val contactRepository = ContactRepository
     Scaffold(
         topBar = {
             TopAppBar(
@@ -185,11 +199,34 @@ fun LoginUserProfileScreen (navController: NavController) {
                     lastNameError = isLastNameEmpty
 
                     if (!isFirstNameEmpty && !isLastNameEmpty) {
-                        navController.navigate("mainScreen") {
-                            popUpTo(navController.graph.startDestinationRoute!!) {
-                                inclusive = true
+                        // 💡 ĐỒNG BỘ HÓA Ở ĐÂY
+                        val newUserId = phoneNumber // SĐT là ID duy nhất
+                        val newUserName = "$firstName $lastName"
+
+                        coroutineScope.launch {
+                            // 1. Lưu phiên đăng nhập
+                            sessionManager.saveUserSession(
+                                id = newUserId,
+                                name = newUserName
+                            )
+
+                            // 2. Thêm chính mình vào danh bạ (để test)
+                            contactRepository.addContact(
+                                Contact(
+                                    id = newUserId,
+                                    name = newUserName,
+                                    status = "Online", // Trạng thái của chính mình
+                                    isOnline = true,
+                                    avatarUrl = null // TODO: Thêm avatar
+                                )
+                            )
+
+                            navController.navigate("mainScreen") {
+                                popUpTo(navController.graph.startDestinationRoute!!) {
+                                    inclusive = true
+                                }
+                                launchSingleTop = true
                             }
-                            launchSingleTop = true
                         }
                     }
                 },

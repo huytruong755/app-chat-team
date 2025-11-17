@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.Icons.Default
 import androidx.compose.material.icons.automirrored.filled.Help
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -27,7 +28,8 @@ import com.example.mychatapp.R
 fun ProfileNavigationList(
     onAccountClick: () -> Unit,
     onPrivacyClick: () -> Unit,
-    onHelpClick: () -> Unit
+    onHelpClick: () -> Unit,
+    onLogoutClick: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -38,6 +40,13 @@ fun ProfileNavigationList(
         ProfileNavItem(icon = Default.Security, title = "Privacy", onClick = onPrivacyClick)
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         ProfileNavItem(icon = Icons.AutoMirrored.Filled.Help, title = "Help", onClick = onHelpClick)
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        ProfileNavItem(
+            icon = Icons.AutoMirrored.Filled.Logout,
+            title = "Logout",
+            onClick = onLogoutClick
+        )
     }
 }
 

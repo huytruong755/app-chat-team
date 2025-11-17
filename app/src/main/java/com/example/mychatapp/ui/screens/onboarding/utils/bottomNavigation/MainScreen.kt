@@ -47,7 +47,10 @@ fun MainScreen(navController: NavController) {
                 OnboardingChats(bottomNavController)
             }
             composable("profile") {
-                OnboardingSelfProfile(bottomNavController)
+                OnboardingSelfProfile(
+                    mainNavController = navController,
+                    bottomNavController = bottomNavController
+                )
             }
             composable("addFriend") {
                 OnboardingAddFriend(bottomNavController)

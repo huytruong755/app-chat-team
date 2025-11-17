@@ -1,5 +1,6 @@
 package com.example.mychatapp.ui.screens.onboarding
 
+import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -20,50 +22,104 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.mychatapp.R
-import kotlinx.coroutines.delay
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.PhoneAuthProvider
+
+import com.example.mychatapp.network.RetrofitInstance
+import com.example.mychatapp.network.dto.FirebaseTokenDto
+import com.example.mychatapp.ui.screens.onboarding.utils.SessionManager
+import kotlinx.coroutines.launch
+import java.lang.Exception
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuthenticationEnterCode(
     navController: NavController,
-    phoneNumber: String
+    phoneNumber: String,
+    verificationId: String
 ) {
     var otpCode by remember { mutableStateOf("") }
-    val maxLength = 4
+    val maxLength = 6
 
-    var isSending by remember { mutableStateOf(false) }
-    var resendMessage by remember { mutableStateOf("") }
-    var shouldResend by remember { mutableStateOf(false) }
-    var userInput by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) } // Đổi tên
     var errorMessage by remember { mutableStateOf("") }
 
     val focusRequester = remember { FocusRequester() }
+    val context = LocalContext.current
+    val auth = FirebaseAuth.getInstance()
 
-    //giả lập otp backend gửi về
-    val correctOtpCode = "1234"
+    val coroutineScope = rememberCoroutineScope()
+    val sessionManager = remember { SessionManager(context) }
+    val apiService = RetrofitInstance.api
 
     LaunchedEffect(otpCode) {
-        if (otpCode.length == 4) {
-            if (otpCode == correctOtpCode) {
-                delay(300) // hiệu ứng nhỏ
-                navController.navigate("UserProfile") {
-                    popUpTo("AuthenticationEnterCode/{phoneNumber}") { inclusive = true }
-                }
-            } else {
-                errorMessage = "Mã OTP không khả dụng, vui lòng thử lại!"
-            }
-        }
-    }
+        // 💡 SỬA: Kiểm tra 6 số
+        if (otpCode.length == maxLength) {
+            isLoading = true
+            errorMessage = ""
 
-    // Giả lập gửi lại mã OTP
-    LaunchedEffect(shouldResend) {
-        if (shouldResend) {
-            isSending = true
-            resendMessage = "Đang gửi lại mã..."
-            delay(2000)
-            isSending = false
-            resendMessage = "Đã gửi lại mã OTP!"
-            shouldResend = false
+            // 1. Tạo "chìa khóa" (credential) từ ID phiên và OTP người dùng nhập
+            val credential = PhoneAuthProvider.getCredential(verificationId, otpCode)
+
+            // 2. Dùng "chìa khóa" để đăng nhập
+            auth.signInWithCredential(credential)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        // 3. ĐĂNG NHẬP FIREBASE THÀNH CÔNG!
+                        Toast.makeText(context, "Firebase Sign-In Success!", Toast.LENGTH_SHORT)
+                            .show()
+
+                        // 4. LẤY FIREBASE ID TOKEN (ĐỂ GỬI CHO C#)
+                        task.result?.user?.getIdToken(true)
+                            ?.addOnSuccessListener { tokenResult ->
+                                val firebaseToken = tokenResult.token
+
+                                if (firebaseToken == null) {
+                                    isLoading = false
+                                    errorMessage = "Failed to get valid token from Firebase."
+                                    return@addOnSuccessListener
+                                }
+                                // TODO: (Bước sau) Gọi API C# tại đây
+                                coroutineScope.launch {
+                                    try {
+                                        // 3. Gửi Token Firebase -> C#, nhận Token C#
+                                        val cSharpResponse = apiService.firebaseLogin(
+                                            FirebaseTokenDto(token = firebaseToken)
+                                        )
+
+                                        // 4. LƯU PHIÊN ĐĂNG NHẬP THẬT
+                                        sessionManager.saveUserSession(
+                                            id = cSharpResponse.userId, // Hoặc SĐT nếu C# không trả về
+                                            name = cSharpResponse.name
+                                        )
+
+                                        Toast.makeText(context, "Login Success!", Toast.LENGTH_SHORT).show()
+
+                                        // 5. Điều hướng đến UserProfile
+                                        isLoading = false
+                                        navController.navigate("UserProfile/$phoneNumber") {
+                                            popUpTo("PhoneNumber") { inclusive = true }
+                                        }
+
+                                    } catch (e: Exception) {
+                                        // 6. Lỗi khi gọi API C#
+                                        isLoading = false
+                                        errorMessage = "C# API Error: ${e.message}"
+                                    }
+                                }
+                            }
+                            ?.addOnFailureListener {
+                                // 7. Lỗi khi lấy Firebase Token
+                                isLoading = false
+                                errorMessage = "Failed to get Firebase token: ${it.message}"
+                            }
+
+                    } else {
+                        // 8. Lỗi (Sai OTP)
+                        isLoading = false
+                        errorMessage = "Invalid OTP code. Please try again."
+                    }
+                }
         }
     }
 
@@ -72,7 +128,7 @@ fun AuthenticationEnterCode(
             TopAppBar(
                 title = {},
                 navigationIcon = {
-                    IconButton(onClick = { navController.navigate("PhoneNumber") }) {
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             painter = painterResource(id = R.drawable.vector),
                             contentDescription = "Back",
@@ -169,30 +225,31 @@ fun AuthenticationEnterCode(
                 }
             }
 
+            if (errorMessage.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = errorMessage,
+                    color = Color.Red,
+                    fontSize = 14.sp
+                )
+            }
+
             Spacer(modifier = Modifier.height(30.dp))
 
             Button(
-                onClick = { shouldResend = true },
-                enabled = !isSending,
+                onClick = { navController.popBackStack() },
+                enabled = !isLoading,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E88E5))
             ) {
                 Text(
-                    text = if (isSending) "Đang gửi..." else "Resend code",
+                    text = "Resend code ",
                     color = Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.offset(y = (-1.8).dp)
                 )
             }
-
-            if (resendMessage.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = resendMessage,
-                    color = Color.Gray,
-                    fontSize = 14.sp
-                )
-            }
         }
     }
 }
+

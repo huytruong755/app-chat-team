@@ -26,7 +26,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.PhoneAuthProvider
 
 import com.example.mychatapp.network.RetrofitInstance
-import com.example.mychatapp.network.dto.FirebaseTokenDto
+import com.example.mychatapp.network.dto.LoginRequestDto
 import com.example.mychatapp.ui.screens.onboarding.utils.SessionManager
 import kotlinx.coroutines.launch
 import java.lang.Exception
@@ -65,54 +65,68 @@ fun AuthenticationEnterCode(
             auth.signInWithCredential(credential)
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
-                        // 3. ĐĂNG NHẬP FIREBASE THÀNH CÔNG!
-                        Toast.makeText(context, "Firebase Sign-In Success!", Toast.LENGTH_SHORT)
-                            .show()
+                        // 1. Đăng nhập Firebase (Xác thực OTP) thành công
+                        Toast.makeText(context, "OTP Verified!", Toast.LENGTH_SHORT).show()
 
-                        // 4. LẤY FIREBASE ID TOKEN (ĐỂ GỬI CHO C#)
-                        task.result?.user?.getIdToken(true)
-                            ?.addOnSuccessListener { tokenResult ->
-                                val firebaseToken = tokenResult.token
+                        // 💡 LOGIC MỚI: Không cần lấy Firebase Token.
+                        // Chúng ta đã biết SĐT là thật. Giờ gọi thẳng C#
 
-                                if (firebaseToken == null) {
-                                    isLoading = false
-                                    errorMessage = "Failed to get valid token from Firebase."
-                                    return@addOnSuccessListener
-                                }
-                                // TODO: (Bước sau) Gọi API C# tại đây
-                                coroutineScope.launch {
-                                    try {
-                                        // 3. Gửi Token Firebase -> C#, nhận Token C#
-                                        val cSharpResponse = apiService.firebaseLogin(
-                                            FirebaseTokenDto(token = firebaseToken)
-                                        )
+                        // KÍCH HOẠT: Gọi API C#
+                        coroutineScope.launch {
+                            try {
+                                // 3. Gửi SĐT -> C#, nhận Token C#
+                                val response = apiService.login( // ⬅️ Dùng hàm "login" mới
+                                    LoginRequestDto(phoneNumber = phoneNumber) // ⬅️ Gửi SĐT
+                                )
 
+                                if (response.isSuccessful) {
+                                    val cSharpResponse = response.body()
+
+                                    if (cSharpResponse != null) {
                                         // 4. LƯU PHIÊN ĐĂNG NHẬP THẬT
                                         sessionManager.saveUserSession(
-                                            id = cSharpResponse.userId, // Hoặc SĐT nếu C# không trả về
-                                            name = cSharpResponse.name
+                                            id = cSharpResponse.userId,
+                                            name = ""
                                         )
 
-                                        Toast.makeText(context, "Login Success!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Welcome back!", Toast.LENGTH_SHORT).show()
 
-                                        // 5. Điều hướng đến UserProfile
+                                        // Điều hướng đến UserProfile
                                         isLoading = false
+                                        // (Dùng tên màn hình mà bạn đã có)
                                         navController.navigate("UserProfile/$phoneNumber") {
                                             popUpTo("PhoneNumber") { inclusive = true }
                                         }
-
-                                    } catch (e: Exception) {
-                                        // 6. Lỗi khi gọi API C#
+                                    } else {
                                         isLoading = false
-                                        errorMessage = "C# API Error: ${e.message}"
+                                        errorMessage = "API Error: Empty response body"
                                     }
+
+                                } else if (response.code() == 401) {
+                                    // === KỊCH BẢN 2: USER MỚI ===
+                                    // Mã 401 Unauthorized! User này CHƯA TỒN TẠI
+                                    Toast.makeText(context, "New user! Please complete profile.", Toast.LENGTH_SHORT).show()
+
+                                    // 5. CHUYỂN HƯỚNG ĐẾN TRANG CỦA BẠN
+                                    isLoading = false
+                                    // (Giả sử bạn đã thêm "OnboardingUserProfile" vào NavHost)
+                                    navController.navigate("OnboardingUserProfile/$phoneNumber") { // ⬅️ DÙNG MÀN HÌNH CỦA BẠN
+                                        popUpTo("PhoneNumber") { inclusive = true }
+                                    }
+
+                                } else {
+                                    // Lỗi: Server C# trả về 4xx, 5xx
+                                    isLoading = false
+                                    errorMessage = "API Error: ${response.code()} ${response.message()}"
                                 }
-                            }
-                            ?.addOnFailureListener {
-                                // 7. Lỗi khi lấy Firebase Token
+
+                            } catch (e: Exception) {
+                                // 6. Lỗi khi gọi API C# (ví dụ: "Failed to connect")
                                 isLoading = false
-                                errorMessage = "Failed to get Firebase token: ${it.message}"
+                                errorMessage = "Error: ${e.message}"
                             }
+                        }
+                        // 💡 KẾT THÚC LOGIC MỚI
 
                     } else {
                         // 8. Lỗi (Sai OTP)

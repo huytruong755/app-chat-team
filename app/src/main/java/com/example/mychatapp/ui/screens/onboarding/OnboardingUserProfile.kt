@@ -1,5 +1,6 @@
 package com.example.mychatapp.ui.screens.onboarding
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,6 +27,9 @@ import com.example.mychatapp.model.modelData.Contact
 import com.example.mychatapp.model.viewModel.ContactRepository
 import com.example.mychatapp.ui.screens.onboarding.utils.SessionManager
 import kotlinx.coroutines.launch
+import com.example.mychatapp.network.dto.RegisterRequestDto
+import com.example.mychatapp.network.RetrofitInstance
+import android.widget.Toast
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,6 +38,10 @@ fun LoginUserProfileScreen (
     navController: NavController,
     phoneNumber: String
 ) {
+    BackHandler {
+        // Để trống nghĩa là chặn không cho quay lại
+    }
+
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
 
@@ -42,11 +50,12 @@ fun LoginUserProfileScreen (
     var lastNameError by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
-    val sessionManager = remember { SessionManager(context) }
     val coroutineScope = rememberCoroutineScope()
-    // Lưu ý: Chúng ta đang gọi trực tiếp Repository
-    // (Đây là cách làm đúng với Singleton)
+    val sessionManager = remember { SessionManager(context) }
     val contactRepository = ContactRepository
+
+    val apiService = RetrofitInstance.api
+    var isLoading by remember { mutableStateOf(false) } // (Để chặn spam click)
     Scaffold(
         topBar = {
             TopAppBar(
@@ -57,16 +66,6 @@ fun LoginUserProfileScreen (
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 23.sp
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.vector),
-                            contentDescription = "Back",
-                            modifier = Modifier.size(15.dp),
-                            tint = Color.Black
-                        )
-                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
@@ -198,38 +197,70 @@ fun LoginUserProfileScreen (
                     firstNameError = isFirstNameEmpty
                     lastNameError = isLastNameEmpty
 
-                    if (!isFirstNameEmpty && !isLastNameEmpty) {
-                        // 💡 ĐỒNG BỘ HÓA Ở ĐÂY
-                        val newUserId = phoneNumber // SĐT là ID duy nhất
-                        val newUserName = "$firstName $lastName"
+                    if (!isFirstNameEmpty && !isLastNameEmpty && !isLoading) {
+                        isLoading = true // Chặn spam click
+
+                        // "Công thức" Register (khớp Postman)
+                        val registerDto = RegisterRequestDto(
+                            firstName = firstName,
+                            lastName = lastName,
+                            phoneNumber = phoneNumber
+                            // lastSeen: Dùng giá trị mặc định (từ ApiService.kt)
+                        )
 
                         coroutineScope.launch {
-                            // 1. Lưu phiên đăng nhập
-                            sessionManager.saveUserSession(
-                                id = newUserId,
-                                name = newUserName
-                            )
+                            try {
+                                // 1. BÁO CHO C# (Register)
+                                val response = apiService.register(registerDto)
 
-                            // 2. Thêm chính mình vào danh bạ (để test)
-                            contactRepository.addContact(
-                                Contact(
-                                    id = newUserId,
-                                    name = newUserName,
-                                    status = "Online", // Trạng thái của chính mình
-                                    isOnline = true,
-                                    avatarUrl = null // TODO: Thêm avatar
-                                )
-                            )
+                                if (response.isSuccessful) {
+                                    // 2. LẤY DỮ LIỆU USER (Token, ID)
+                                    val cSharpResponse = response.body()
+                                    if (cSharpResponse != null) {
 
-                            navController.navigate("mainScreen") {
-                                popUpTo(navController.graph.startDestinationRoute!!) {
-                                    inclusive = true
+                                        // 3. LƯU PHIÊN ĐĂNG NHẬP (Cục bộ)
+                                        sessionManager.saveUserSession(
+                                            id = cSharpResponse.userId,
+                                            name = "$firstName $lastName"
+                                        )
+
+                                        // (Tùy chọn: Lưu vào Contact Repository)
+                                        contactRepository.addContact(
+                                            Contact(
+                                                id = cSharpResponse.userId,
+                                                name = "$firstName $lastName",
+                                                status = "Online",
+                                                isOnline = true,
+                                                avatarUrl = null
+                                            )
+                                        )
+
+                                        // 4. ĐI ĐẾN MÀN HÌNH CHÍNH
+                                        isLoading = false
+                                        navController.navigate("mainScreen") {
+                                            popUpTo(navController.graph.startDestinationRoute!!) {
+                                                inclusive = true
+                                            }
+                                            launchSingleTop = true
+                                        }
+                                    } else {
+                                        isLoading = false
+                                        Toast.makeText(context, "API Error: Empty response body", Toast.LENGTH_SHORT).show()
+                                    }
+                                } else {
+                                    // Lỗi 400 (ví dụ: "Email already taken", dù không thể)
+                                    isLoading = false
+                                    Toast.makeText(context, "API Error: ${response.code()} ${response.message()}", Toast.LENGTH_SHORT).show()
                                 }
-                                launchSingleTop = true
+                            } catch (e: Exception) {
+                                // Lỗi "Failed to connect"
+                                isLoading = false
+                                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                             }
                         }
                     }
                 },
+                enabled = !isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),

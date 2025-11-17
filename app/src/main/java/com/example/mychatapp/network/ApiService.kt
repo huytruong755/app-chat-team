@@ -3,8 +3,11 @@ package com.example.mychatapp.network
 import com.example.mychatapp.model.modelData.Chat
 import com.example.mychatapp.model.modelData.ChatMessage
 import com.example.mychatapp.model.modelData.Contact
-import com.example.mychatapp.network.dto.FirebaseTokenDto
+import com.example.mychatapp.network.dto.LoginRequestDto
 import com.example.mychatapp.network.dto.LoginResponseDto
+import com.example.mychatapp.network.dto.RegisterRequestDto
+
+import retrofit2.Response
 import retrofit2.http.Body // 💡 THÊM IMPORT
 import retrofit2.http.GET
 import retrofit2.http.POST // 💡 THÊM IMPORT
@@ -19,8 +22,10 @@ interface ApiService {
 
     // --- Ví dụ cho Contact ---
 
-    @POST("api/auth/firebase-login")
-    suspend fun firebaseLogin(@Body tokenDto: FirebaseTokenDto): LoginResponseDto
+    @POST("Auth/login")
+    suspend fun login( // 1. Đổi tên hàm
+        @Body loginDto: LoginRequestDto // 2. Đổi tham số
+    ): Response<LoginResponseDto>
     /**
      * Lấy danh sách bạn bè
      * Tương đương: GET /api/contacts
@@ -50,4 +55,8 @@ interface ApiService {
 
     // @POST("api/chat/send/text")
     // suspend fun sendTextMessage(...)
+    @POST("Auth/register")
+    suspend fun register(@Body registerDto: RegisterRequestDto): Response<LoginResponseDto>
+
 }
+

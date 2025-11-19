@@ -45,59 +45,16 @@ android {
 }
 
 dependencies {
-//    implementation(libs.retrofit.core)
-//    implementation(libs.retrofit.converter.gson)
-//    implementation(libs.signalr.client)
-//
-//    implementation (libs.androidx.activity.compose.v190)
-//
-//    implementation(libs.androidx.lifecycle.viewmodel.compose)
-//
-//    //Coil library
-//    implementation(libs.coil.compose.v260)
-//
-//    //dataset
-//    implementation(libs.androidx.datastore.preferences)
-//
-//    // Compose BOM để đồng bộ version
-//    implementation(platform(libs.androidx.compose.bom))
-//
-//    // Core Compose UI
-//    implementation(libs.androidx.compose.ui)
-//    implementation(libs.androidx.compose.ui.graphics)
-//    implementation(libs.androidx.compose.ui.tooling.preview)
-//    implementation(libs.androidx.material3)
-//    debugImplementation(libs.androidx.compose.ui.tooling)
-//    debugImplementation(libs.androidx.compose.ui.test.manifest)
-//
-//    // Material 3
-//    implementation(libs.material3)
-//
-//    // Icons
-//    implementation(libs.material.icons.extended)
-//
-//    // Navigation
-//    implementation(libs.androidx.navigation.compose)
-//
-//    // Activity Compose
-//    implementation(libs.androidx.activity.compose)
-//
-//    // Lifecycle
-//    implementation(libs.androidx.lifecycle.runtime.ktx)
-//
-//    // Coil (hiển thị ảnh)
-//    implementation(libs.coil.compose)
-//
-//    // Country & image picker (của bạn)
-//    implementation(libs.country.code.picker)
-//    implementation(libs.image.picker)
-//
-//    // Unit tests
-//    testImplementation(libs.junit)
-//    androidTestImplementation(libs.androidx.junit)
-//    androidTestImplementation(libs.androidx.espresso.core)
-//    androidTestImplementation(platform(libs.androidx.compose.bom))
-//    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    // ADDED: SignalR
+    implementation("com.microsoft.signalr:signalr:8.0.0")
+    implementation("com.google.code.gson:gson:2.10.1")
+    // Retrofit & Gson
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    // OkHttp for timeout and logging
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

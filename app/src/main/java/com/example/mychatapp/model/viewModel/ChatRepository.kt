@@ -1,122 +1,301 @@
 package com.example.mychatapp.model.viewModel
 
-import com.example.mychatapp.data.sampleChats
+import android.util.Log
 import com.example.mychatapp.model.modelData.Chat
 import com.example.mychatapp.model.modelData.ChatMessage
 import com.example.mychatapp.model.modelData.Contact
+import com.example.mychatapp.network.RetrofitInstance
+import com.example.mychatapp.network.SignalRService
+import com.example.mychatapp.network.dto.ChatResponseDto
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
 
-/**
- * ================================
- * 📦 ChatRepository.kt (Singleton)
- * ================================
- * Đây là "Nguồn sự thật chung" (Single Source of Truth)
- * thay thế cho database/API khi dùng dữ liệu mẫu.
- *
- * Nó là một 'object' (singleton) để cả 2 ViewModel
- * có thể truy cập và chia sẻ cùng một dữ liệu.
- */
 object ChatRepository {
 
-    // == PHẦN 1: DANH SÁCH CHAT ==
+    private val api = RetrofitInstance.api
+    private const val BASE_URL = "http://192.168.1.39:5047"
 
-    // Giữ danh sách chat, khởi tạo bằng dữ liệu mẫu
-    private val _chats = MutableStateFlow(sampleChats)
-    val chats = _chats.asStateFlow() // Expose ra ngoài
+    private var currentUserId: Int = 0
+    private var authToken: String = ""
 
-    // Dữ liệu mẫu cho tin nhắn chi tiết
-    // Key = ID của cuộc hội thoại (giống ID của Chat)
-    private val sampleMessages = mutableMapOf(
-        "1" to mutableListOf(
-            ChatMessage("msg1_1", "1", "user_self", "text", "Hey, how are you?", null, "09:45 AM",
-                isRead = false,
-                isSentByMe = false
-            )
-        ),
-        "2" to mutableListOf(
-            ChatMessage("msg2_1", "2", "user_self", "text", "Let's meet tomorrow!", null, "Yesterday",
-                isRead = false,
-                isSentByMe = false
-            )
-        ),
-        "3" to mutableListOf(
-            ChatMessage("msg3_1", "3", "user_self", "text", "Typing...", null, "Now",
-                isRead = false,
-                isSentByMe = false
-            )
-        )
-    )
+    // === DANH SÁCH CHAT ===
+    private val _chats = MutableStateFlow<List<Chat>>(emptyList())
+    val chats: StateFlow<List<Chat>> = _chats.asStateFlow()
 
-    // Giữ tất cả tin nhắn
-    private val _messages = MutableStateFlow(sampleMessages)
+    // === MESSAGES ===
+    private val _messages = mutableMapOf<String, MutableStateFlow<List<ChatMessage>>>()
 
-    /**
-     * Lấy Flow tin nhắn cho một chat cụ thể
-     */
-    fun getMessagesForChat(chatId: String): MutableStateFlow<List<ChatMessage>> {
-        // Đảm bảo rằng có một danh sách tin nhắn cho chatId này
-        if (!_messages.value.containsKey(chatId)) {
-            _messages.value[chatId] = mutableListOf()
+    // Map FriendId -> ChatId (server)
+    private val friendToChatIdMap = mutableMapOf<Int, Int>()
+
+    init {
+        // Lắng nghe realtime message từ SignalR
+        CoroutineScope(Dispatchers.IO).launch {
+            SignalRService.incomingMessages.collect { msgDto ->
+                // Chuyển DTO -> UI model
+                val friendId = friendToChatIdMap.entries.find { it.value == (msgDto.chatId ?: 0) }?.key
+                if (friendId != null && msgDto.chatId != null) {
+                    val newMessage = ChatMessage(
+                        id = msgDto.id,
+                        chatId = msgDto.chatId,
+                        senderId = msgDto.senderId,
+                        senderName = msgDto.senderName,
+                        content = msgDto.content,
+                        fileUrl = msgDto.fileUrl?.let { if (it.startsWith("http")) it else "$BASE_URL$it" },
+                        fileType = msgDto.fileType ?: "text",
+                        timestamp = msgDto.sentTime,
+                        status = msgDto.status ?: "sent",
+                        isSentByMe = msgDto.senderId == currentUserId
+                    )
+                    updateMessageList(friendId.toString(), newMessage)
+                } else {
+                    Log.e("ChatRepo", "Cannot map incoming message to any friendId. chatId: ${msgDto.chatId}")
+                }
+            }
         }
-        // Chúng ta cần một cách để trả về một Flow chỉ cho list này.
-        // Đây là một cách đơn giản hóa:
-        // Trong 1 app thật, bạn sẽ query từ DB (ví dụ: Room)
-        // Ở đây chúng ta sẽ trả về 1 flow mới chỉ chứa list đó
-        return MutableStateFlow(_messages.value[chatId] ?: emptyList())
-        // Tốt hơn: Trả về 1 flow mà cập nhật khi map thay đổi
-        // (Nhưng để đơn giản, chúng ta sẽ cập nhật _messages và _chats)
     }
 
-    // == PHẦN 3: HÀNH ĐỘNG (GHI DỮ LIỆU) ==
+    fun initialize(token: String, myId: Int) {
+        currentUserId = myId
+        authToken = token
+        CoroutineScope(Dispatchers.IO).launch {
+            SignalRService.startConnection(token)
+        }
+    }
 
-    /**
-     * Gửi tin nhắn mới.
-     * Đây là hàm quan trọng nhất.
-     */
-    fun sendTextMessage(senderId: String, receiverId: String, text: String) {
-        // 1. Tạo tin nhắn mới
-        val newMessage = ChatMessage(
-            id = System.currentTimeMillis().toString(),
-            senderId = senderId,
-            receiverId = receiverId,
-            type = "text",
+    // Lấy messages theo FriendId
+    fun getMessagesForChat(friendId: String): MutableStateFlow<List<ChatMessage>> {
+        if (!_messages.containsKey(friendId)) _messages[friendId] = MutableStateFlow(emptyList())
+        return _messages[friendId]!!
+    }
+
+    // Cập nhật message list + last message
+    private fun updateMessageList(friendId: String, message: ChatMessage) {
+        val flow = getMessagesForChat(friendId)
+        val currentList = flow.value.toMutableList()
+        currentList.add(0, message)  // add mới lên đầu
+        flow.value = currentList
+
+        updateLastMessage(friendId, message)
+    }
+
+    // Fetch lịch sử tin nhắn từ server
+    fun fetchMessages(chatId: Int, friendIdString: String) {
+        val friendId = friendIdString.toIntOrNull() ?: return
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = api.getMessages("Bearer $authToken", chatId)
+                if (response.isSuccessful && response.body() != null) {
+                    val messages = response.body()!!
+
+                    // Lưu ChatId từ server
+                    friendToChatIdMap[friendId] = chatId
+
+                    // Join SignalR group
+                    SignalRService.joinChatGroup(chatId.toString())
+
+                    // Map DTO -> UI
+                    val uiMessages = messages.map { msgDto ->
+                        ChatMessage(
+                            id = msgDto.id,
+                            chatId = chatId,
+                            senderId = msgDto.senderId,
+                            senderName = msgDto.senderName,
+                            content = msgDto.content,
+                            fileUrl = msgDto.fileUrl?.let { if (it.startsWith("http")) it else "$BASE_URL$it" },
+                            fileType = msgDto.fileType ?: "text",
+                            timestamp = msgDto.sentTime,
+                            status = msgDto.status ?: "sent",
+                            isSentByMe = msgDto.senderId == currentUserId
+                        )
+                    }
+                    getMessagesForChat(friendIdString).value = uiMessages
+                }
+            } catch (e: Exception) {
+                Log.e("ChatRepo", "Error fetching messages: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+    }
+
+    // === Gửi tin nhắn text ===
+    fun sendTextMessage(senderId: String, friendIdString: String, text: String) {
+        val senderIdInt = senderId.toIntOrNull() ?: return
+        val friendIdInt = friendIdString.toIntOrNull() ?: return
+        val realChatId = friendToChatIdMap[friendIdInt]
+
+        // Optimistic update
+        val tempMessage = ChatMessage(
+            id = System.currentTimeMillis().toInt(),
+            chatId = realChatId,
+            senderId = senderIdInt,
+            senderName = "You",
             content = text,
-            imageUrl = null,
-            timestamp = System.currentTimeMillis().toString(),
-            isRead = false,
-            isSentByMe = true // Giả sử người gửi là 'tôi'
+            fileUrl = null,
+            fileType = "text",
+            timestamp = "Sending...",
+            status = "sending",
+            isSentByMe = true
         )
+        updateMessageList(friendIdString, tempMessage)
 
-        // 2. Thêm tin nhắn này vào danh sách tin nhắn chi tiết
-        val currentMessages = _messages.value[receiverId]?.toMutableList() ?: mutableListOf()
-        currentMessages.add(0, newMessage) // Thêm lên đầu (hoặc cuối, tùy UI)
-        _messages.value[receiverId] = currentMessages
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val chatIdBody = realChatId?.toString()?.toRequestBody() ?: null
+                val senderIdBody = senderIdInt.toString().toRequestBody()
+                val receiverIdBody = friendIdInt.toString().toRequestBody()
+                val fileTypeBody = "text".toRequestBody()
+                val contentBody = text.toRequestBody()
 
-        // 3. CẬP NHẬT 'lastMessage' TRONG DANH SÁCH CHAT CHÍNH
+                val response = api.sendMessage(
+                    token = "Bearer $authToken",
+                    chatId = chatIdBody,
+                    senderId = senderIdBody,
+                    receiverId = receiverIdBody,
+                    fileType = fileTypeBody,
+                    content = contentBody,
+                    file = null
+                )
+
+                if (response.isSuccessful) {
+                    val result = response.body()
+                    if (result != null) {
+                        // Cập nhật chatId nếu chưa có
+                        if (realChatId == null) {
+                            friendToChatIdMap[friendIdInt] = result.chatId
+                            SignalRService.joinChatGroup(result.chatId.toString())
+                        }
+                        Log.d("ChatRepo", "Message sent successfully")
+                    }
+                } else {
+                    Log.e("ChatRepo", "Failed to send message: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("ChatRepo", "Error sending message: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+    }
+
+    // === Gửi tin nhắn hình ===
+    fun sendImageMessage(senderId: Int, friendId: Int, imageFile: File) {
+        val realChatId = friendToChatIdMap[friendId]
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val chatIdBody = realChatId?.toString()?.toRequestBody() ?: null
+                val senderIdBody = senderId.toString().toRequestBody()
+                val receiverIdBody = friendId.toString().toRequestBody()
+                val fileTypeBody = "image".toRequestBody()
+                val contentBody = "".toRequestBody()
+
+                val requestFile = imageFile.asRequestBody("image/*".toMediaTypeOrNull())
+                val filePart = MultipartBody.Part.createFormData("File", imageFile.name, requestFile)
+
+                val response = api.sendMessage(
+                    token = "Bearer $authToken",
+                    chatId = chatIdBody,
+                    senderId = senderIdBody,
+                    receiverId = receiverIdBody,
+                    fileType = fileTypeBody,
+                    content = contentBody,
+                    file = filePart
+                )
+
+                if (response.isSuccessful) {
+                    val result = response.body()
+                    if (result != null) {
+                        if (realChatId == null) {
+                            friendToChatIdMap[friendId] = result.chatId
+                            SignalRService.joinChatGroup(result.chatId.toString())
+                        }
+                        Log.d("ChatRepo", "Image sent successfully")
+                    }
+                } else {
+                    Log.e("ChatRepo", "Failed to send image: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("ChatRepo", "Error sending image: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+    }
+
+    // Cập nhật tin nhắn cuối cùng của chat
+    private fun updateLastMessage(friendId: String, message: ChatMessage) {
         val currentChats = _chats.value.toMutableList()
-        val chatIndex = currentChats.indexOfFirst { it.id == receiverId }
+        val friendIdInt = friendId.toIntOrNull() ?: return
+        val chatIndex = currentChats.indexOfFirst { it.partnerId == friendIdInt }
 
         if (chatIndex != -1) {
             val oldChat = currentChats[chatIndex]
+            val lastMsgText = when {
+                message.content != null -> message.content
+                message.fileType == "image" -> "📷 Hình ảnh"
+                message.fileType == "video" -> "🎥 Video"
+                else -> "[File]"
+            }
             val updatedChat = oldChat.copy(
-                lastMessage = text, // Cập nhật tin nhắn cuối
-                time = SimpleDateFormat("HH:mm a", Locale.US).format(Date()) // Cập nhật thời gian
+                lastMessage = lastMsgText,
+                time = message.timestamp
             )
-            currentChats[chatIndex] = updatedChat
-            _chats.value = currentChats // Phát ra danh sách chat đã cập nhật
+            currentChats.removeAt(chatIndex)
+            currentChats.add(0, updatedChat)
+            _chats.value = currentChats
+        } else {
+            fetchChats()
         }
     }
 
-    /**
-     * Thêm một cuộc hội thoại mới (từ màn hình AddFriend)
-     */
+    fun fetchChats() {
+        if (authToken.isEmpty()) {
+            Log.e("ChatRepo", "Auth token is empty, cannot fetch chats")
+            return
+        }
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = api.getChatConversations("Bearer $authToken")
+                if (response.isSuccessful && response.body() != null) {
+                    val chatDtos = response.body()!!
+                    val chats = chatDtos.map { dto ->
+                        // Lưu mapping friendId -> chatId
+                        val partnerId = dto.info.id
+                        friendToChatIdMap[partnerId] = dto.chat.id
+
+                        Chat(
+                            id = dto.chat.id,
+                            name = dto.info.fullName,
+                            lastMessage = dto.chat.lastMessage,
+                            time = dto.chat.lastMessageTime,
+                            avatarUrl = dto.info.avatarUrl?.let { if (it.startsWith("http")) it else "$BASE_URL$it" },
+                            unreadCount = dto.chat.unreadCount,
+                            isOnline = dto.info.isOnline ?: false,
+                            partnerId = partnerId
+                        )
+                    }
+                    _chats.value = chats
+                } else {
+                    Log.e("ChatRepo", "Failed to fetch chats: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("ChatRepo", "Error fetching chats: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+    }
+
     fun addChat(friend: Contact) {
-        val updatedChats = _chats.value.toMutableList()
-        if (updatedChats.none { it.id == friend.id }) {
+        val currentChats = _chats.value.toMutableList()
+        if (currentChats.none { it.id == friend.id }) {
             val newChat = Chat(
                 id = friend.id,
                 name = friend.name,
@@ -124,47 +303,20 @@ object ChatRepository {
                 time = "Now",
                 avatarUrl = friend.avatarUrl
             )
-            updatedChats.add(newChat)
-            _chats.value = updatedChats
+            currentChats.add(newChat)
+            _chats.value = currentChats
 
-            // Cũng tạo một danh sách tin nhắn rỗng cho họ
-            if (!_messages.value.containsKey(friend.id)) {
-                _messages.value[friend.id] = mutableListOf()
+            if (!_messages.containsKey(friend.id.toString())) {
+                _messages[friend.id.toString()] = MutableStateFlow(emptyList())
             }
         }
     }
 
-    fun sendImageMessage(senderId: String, receiverId: String, imageUri: String) {
-        // 1. Tạo tin nhắn hình ảnh mới
-        val newMessage = ChatMessage(
-            id = System.currentTimeMillis().toString(),
-            senderId = senderId,
-            receiverId = receiverId,
-            type = "image", // 💡 Loại là "image"
-            content = null, // Không có nội dung text
-            imageUrl = imageUri, // 💡 Đường dẫn đến ảnh
-            timestamp = System.currentTimeMillis().toString(),
-            isRead = false,
-            isSentByMe = true
-        )
-
-        // 2. Thêm tin nhắn này vào danh sách tin nhắn chi tiết
-        val currentMessages = _messages.value[receiverId]?.toMutableList() ?: mutableListOf()
-        currentMessages.add(0, newMessage)
-        _messages.value[receiverId] = currentMessages
-
-        // 3. CẬP NHẬT 'lastMessage' TRONG DANH SÁCH CHAT CHÍNH
-        val currentChats = _chats.value.toMutableList()
-        val chatIndex = currentChats.indexOfFirst { it.id == receiverId }
-
-        if (chatIndex != -1) {
-            val oldChat = currentChats[chatIndex]
-            val updatedChat = oldChat.copy(
-                lastMessage = "📷 Hình ảnh", //  Tin nhắn cuối là "Hình ảnh"
-                time = SimpleDateFormat("HH:mm a", Locale.US).format(Date())
-            )
-            currentChats[chatIndex] = updatedChat
-            _chats.value = currentChats // Phát ra danh sách chat đã cập nhật
-        }
+    fun clearData() {
+        _chats.value = emptyList()
+        _messages.clear()
+        friendToChatIdMap.clear()
+        currentUserId = 0
+        SignalRService.stopConnection()
     }
 }

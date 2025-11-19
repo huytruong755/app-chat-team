@@ -31,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,6 +63,10 @@ fun OnboardingContacts(
 
     // Lấy danh sách liên hệ từ ViewModel
     val contacts by viewModel.contacts.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.refreshContacts()
+    }
 
     Scaffold(
         topBar = {
@@ -108,7 +113,8 @@ fun OnboardingContacts(
                         onClick = {
                             // 👉 Khi user bấm vào contact, backend có thể điều hướng tới màn chat cá nhân
                             //TODO: Mỗi ACC từ Contacs sang Mores của mỗi người
-                            navController.navigate("chat_detail/${contact.id}/${contact.name}")
+                            // chatId = 0 vì chưa có chat, sẽ được tạo khi gửi tin nhắn đầu tiên
+                            navController.navigate("chat_detail/0/${contact.id}/${contact.name}")
                         }
                     )
                 }

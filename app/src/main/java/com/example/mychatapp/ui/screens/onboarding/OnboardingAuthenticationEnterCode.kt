@@ -22,12 +22,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.mychatapp.R
+import com.example.mychatapp.network.RetrofitInstance // 💡 SỬA IMPORT
+import com.example.mychatapp.network.dto.LoginRequestDto
+//import com.example.mychatapp.network.dto.LoginResponseDto
+import com.example.mychatapp.ui.screens.onboarding.utils.SessionManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.PhoneAuthProvider
-
-import com.example.mychatapp.network.RetrofitInstance
-import com.example.mychatapp.network.dto.LoginRequestDto
-import com.example.mychatapp.ui.screens.onboarding.utils.SessionManager
 import kotlinx.coroutines.launch
 import java.lang.Exception
 
@@ -40,96 +40,115 @@ fun AuthenticationEnterCode(
 ) {
     var otpCode by remember { mutableStateOf("") }
     val maxLength = 6
-
-    var isLoading by remember { mutableStateOf(false) } // Đổi tên
+    var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-
     val focusRequester = remember { FocusRequester() }
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
-
     val coroutineScope = rememberCoroutineScope()
     val sessionManager = remember { SessionManager(context) }
     val apiService = RetrofitInstance.api
 
     LaunchedEffect(otpCode) {
-        // 💡 SỬA: Kiểm tra 6 số
         if (otpCode.length == maxLength) {
             isLoading = true
             errorMessage = ""
-
-            // 1. Tạo "chìa khóa" (credential) từ ID phiên và OTP người dùng nhập
+            android.util.Log.d("OnboardingAuth", "OTP code entered: $otpCode")
+            
             val credential = PhoneAuthProvider.getCredential(verificationId, otpCode)
 
-            // 2. Dùng "chìa khóa" để đăng nhập
             auth.signInWithCredential(credential)
                 .addOnCompleteListener { task ->
+                    android.util.Log.d("OnboardingAuth", "Firebase auth result: ${task.isSuccessful}")
                     if (task.isSuccessful) {
-                        // 1. Đăng nhập Firebase (Xác thực OTP) thành công
                         Toast.makeText(context, "OTP Verified!", Toast.LENGTH_SHORT).show()
+                        android.util.Log.d("OnboardingAuth", "Calling API login with phone: $phoneNumber")
 
-                        // 💡 LOGIC MỚI: Không cần lấy Firebase Token.
-                        // Chúng ta đã biết SĐT là thật. Giờ gọi thẳng C#
-
-                        // KÍCH HOẠT: Gọi API C#
                         coroutineScope.launch {
                             try {
-                                // 3. Gửi SĐT -> C#, nhận Token C#
-                                val response = apiService.login( // ⬅️ Dùng hàm "login" mới
-                                    LoginRequestDto(phoneNumber = phoneNumber) // ⬅️ Gửi SĐT
+                                android.util.Log.d("OnboardingAuth", "API call started to: http://192.168.1.39:5047/Auth/login")
+                                val response = apiService.login(
+                                    LoginRequestDto(phoneNumber = phoneNumber)
                                 )
+                                android.util.Log.d("OnboardingAuth", "API response code: ${response.code()}, isSuccessful: ${response.isSuccessful}")
 
                                 if (response.isSuccessful) {
-                                    val cSharpResponse = response.body()
-
-                                    if (cSharpResponse != null) {
-                                        // 4. LƯU PHIÊN ĐĂNG NHẬP THẬT
+                                    // === KỊCH BẢN 1: USER CŨ ===
+                                    val loginResponse = response.body()
+                                    if (loginResponse != null) {
+                                        // Cập nhật currentUserId
+                                        com.example.mychatapp.model.viewModel.ContactRepository.currentUserId = loginResponse.userId
+                                        com.example.mychatapp.model.viewModel.ContactRepository.setAuthToken(loginResponse.accessToken)
+                                        
                                         sessionManager.saveUserSession(
-                                            id = cSharpResponse.userId,
-                                            name = ""
+                                            id = loginResponse.userId.toString(),
+                                            name = "",
+                                            token = loginResponse.accessToken,
+                                            avatarUrl = ""
                                         )
-
                                         Toast.makeText(context, "Welcome back!", Toast.LENGTH_SHORT).show()
-
-                                        // Điều hướng đến UserProfile
                                         isLoading = false
-                                        // (Dùng tên màn hình mà bạn đã có)
-                                        navController.navigate("UserProfile/$phoneNumber") {
+                                        navController.navigate("mainScreen") {
                                             popUpTo("PhoneNumber") { inclusive = true }
                                         }
                                     } else {
                                         isLoading = false
                                         errorMessage = "API Error: Empty response body"
                                     }
-
                                 } else if (response.code() == 401) {
                                     // === KỊCH BẢN 2: USER MỚI ===
-                                    // Mã 401 Unauthorized! User này CHƯA TỒN TẠI
-                                    Toast.makeText(context, "New user! Please complete profile.", Toast.LENGTH_SHORT).show()
-
-                                    // 5. CHUYỂN HƯỚNG ĐẾN TRANG CỦA BẠN
+                                    Toast.makeText(context, "New user! Please create profile.", Toast.LENGTH_SHORT).show()
                                     isLoading = false
-                                    // (Giả sử bạn đã thêm "OnboardingUserProfile" vào NavHost)
-                                    navController.navigate("OnboardingUserProfile/$phoneNumber") { // ⬅️ DÙNG MÀN HÌNH CỦA BẠN
+
+                                    navController.navigate("UserProfile/$phoneNumber") {
                                         popUpTo("PhoneNumber") { inclusive = true }
                                     }
-
                                 } else {
-                                    // Lỗi: Server C# trả về 4xx, 5xx
                                     isLoading = false
                                     errorMessage = "API Error: ${response.code()} ${response.message()}"
                                 }
-
-                            } catch (e: Exception) {
-                                // 6. Lỗi khi gọi API C# (ví dụ: "Failed to connect")
+                            } catch (e: java.net.ConnectException) {
                                 isLoading = false
-                                errorMessage = "Error: ${e.message}"
+                                android.util.Log.e("OnboardingAuth", "ConnectException: ${e.message}", e)
+                                errorMessage = "⚠️ Không thể kết nối đến server!\n\n" +
+                                        "Vui lòng kiểm tra:\n" +
+                                        "• Server đã chạy chưa? (http://192.168.1.39:5047)\n" +
+                                        "• IP address đúng chưa?\n" +
+                                        "• Điện thoại và máy tính cùng mạng WiFi?\n" +
+                                        "• Firewall có chặn port 5047 không?\n\n" +
+                                        "Chi tiết: ${e.message}"
+                            } catch (e: java.net.SocketTimeoutException) {
+                                isLoading = false
+                                errorMessage = "⏱️ Kết nối quá lâu!\n\n" +
+                                        "Server có thể đang quá tải hoặc không phản hồi.\n" +
+                                        "Vui lòng thử lại sau."
+                            } catch (e: java.net.UnknownHostException) {
+                                isLoading = false
+                                errorMessage = "🌐 Không tìm thấy server!\n\n" +
+                                        "Không thể phân giải địa chỉ IP.\n" +
+                                        "Vui lòng kiểm tra kết nối mạng."
+                            } catch (e: Exception) {
+                                isLoading = false
+                                // Xử lý các loại lỗi khác nhau
+                                val errorMsg = when {
+                                    e.message?.contains("failed to connect", ignoreCase = true) == true -> 
+                                        "⚠️ Không thể kết nối đến server!\n\n" +
+                                        "Vui lòng kiểm tra:\n" +
+                                        "• Server đã chạy chưa? (http://192.168.1.39:5047)\n" +
+                                        "• IP address đúng chưa?\n" +
+                                        "• Điện thoại và máy tính cùng mạng WiFi?"
+                                    e.message?.contains("timeout", ignoreCase = true) == true -> 
+                                        "⏱️ Kết nối quá lâu. Vui lòng thử lại."
+                                    e.message?.contains("Unable to resolve host", ignoreCase = true) == true -> 
+                                        "🌐 Không tìm thấy server. Vui lòng kiểm tra kết nối mạng."
+                                    else -> "❌ Lỗi: ${e.message ?: "Không xác định"}\n\n" +
+                                            "Chi tiết: ${e.javaClass.simpleName}"
+                                }
+                                errorMessage = errorMsg
+                                android.util.Log.e("OnboardingAuth", "Login error", e)
                             }
                         }
-                        // 💡 KẾT THÚC LOGIC MỚI
-
                     } else {
-                        // 8. Lỗi (Sai OTP)
                         isLoading = false
                         errorMessage = "Invalid OTP code. Please try again."
                     }
@@ -142,7 +161,7 @@ fun AuthenticationEnterCode(
             TopAppBar(
                 title = {},
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { navController.popBackStack() }) { // Quay lại
                         Icon(
                             painter = painterResource(id = R.drawable.vector),
                             contentDescription = "Back",
@@ -158,8 +177,6 @@ fun AuthenticationEnterCode(
             )
         }
     ) { innerPadding ->
-
-        // Nội dung chính
         Column(
             modifier = Modifier
                 .padding(innerPadding)
@@ -216,7 +233,8 @@ fun AuthenticationEnterCode(
                 )
             )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            // Lặp 6 ô
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 repeat(maxLength) { index ->
                     val char = otpCode.getOrNull(index)?.toString() ?: ""
                     Box(
@@ -241,17 +259,110 @@ fun AuthenticationEnterCode(
 
             if (errorMessage.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = errorMessage,
-                    color = Color.Red,
-                    fontSize = 14.sp
-                )
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFFFEBEE)
+                    ),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text(
+                        text = errorMessage,
+                        color = Color(0xFFC62828),
+                        fontSize = 13.sp,
+                        lineHeight = 20.sp,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(30.dp))
 
+            // Button để test API trực tiếp (bypass Firebase) - dùng để debug khi server đã chạy
             Button(
-                onClick = { navController.popBackStack() },
+                onClick = {
+                    coroutineScope.launch {
+                        isLoading = true
+                        errorMessage = ""
+                        try {
+                            android.util.Log.d("OnboardingAuth", "Testing API directly (bypass Firebase)...")
+                            android.util.Log.d("OnboardingAuth", "Phone number: $phoneNumber")
+                            android.util.Log.d("OnboardingAuth", "API URL: http://192.168.1.39:5047/Auth/login")
+                            
+                            val response = apiService.login(
+                                LoginRequestDto(phoneNumber = phoneNumber)
+                            )
+                            
+                            android.util.Log.d("OnboardingAuth", "Test API response code: ${response.code()}")
+                            android.util.Log.d("OnboardingAuth", "Test API response message: ${response.message()}")
+                            android.util.Log.d("OnboardingAuth", "Test API isSuccessful: ${response.isSuccessful}")
+                            
+                            if (response.isSuccessful) {
+                                val loginResponse = response.body()
+                                android.util.Log.d("OnboardingAuth", "Login response body: $loginResponse")
+                                if (loginResponse != null) {
+                                    com.example.mychatapp.model.viewModel.ContactRepository.currentUserId = loginResponse.userId
+                                    com.example.mychatapp.model.viewModel.ContactRepository.setAuthToken(loginResponse.accessToken)
+                                    sessionManager.saveUserSession(
+                                        id = loginResponse.userId.toString(),
+                                        name = "",
+                                        token = loginResponse.accessToken,
+                                        avatarUrl = ""
+                                    )
+                                    Toast.makeText(context, "✅ Test login successful!", Toast.LENGTH_SHORT).show()
+                                    navController.navigate("mainScreen") {
+                                        popUpTo("PhoneNumber") { inclusive = true }
+                                    }
+                                } else {
+                                    errorMessage = "❌ Test API: Response body is null"
+                                }
+                            } else {
+                                val errorBody = response.errorBody()?.string()
+                                android.util.Log.e("OnboardingAuth", "Test API error body: $errorBody")
+                                errorMessage = "❌ Test API Error:\n" +
+                                        "Code: ${response.code()}\n" +
+                                        "Message: ${response.message()}\n" +
+                                        "Error: ${errorBody ?: "No error body"}"
+                            }
+                        } catch (e: java.net.ConnectException) {
+                            android.util.Log.e("OnboardingAuth", "Test API ConnectException", e)
+                            errorMessage = "⚠️ Không thể kết nối!\n\n" +
+                                    "Server có thể chưa chạy.\n" +
+                                    "Vui lòng chạy backend server trước.\n\n" +
+                                    "Chi tiết: ${e.message}"
+                        } catch (e: java.net.SocketTimeoutException) {
+                            android.util.Log.e("OnboardingAuth", "Test API SocketTimeoutException", e)
+                            errorMessage = "⏱️ Timeout!\n\n" +
+                                    "Server không phản hồi trong 15 giây.\n" +
+                                    "Vui lòng kiểm tra server."
+                        } catch (e: Exception) {
+                            android.util.Log.e("OnboardingAuth", "Test API error", e)
+                            errorMessage = "❌ Test API Error:\n${e.message}\n\n" +
+                                    "Type: ${e.javaClass.simpleName}"
+                        } finally {
+                            isLoading = false
+                        }
+                    }
+                },
+                enabled = !isLoading,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 8.dp)
+            ) {
+                Text(
+                    text = "🔧 Test API (Bypass Firebase)",
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
+            Button(
+                onClick = { navController.popBackStack() }, // Quay về để gửi lại
                 enabled = !isLoading,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E88E5))
             ) {
@@ -263,7 +374,15 @@ fun AuthenticationEnterCode(
                     modifier = Modifier.offset(y = (-1.8).dp)
                 )
             }
+            
+            // Loading indicator
+            if (isLoading) {
+                Spacer(modifier = Modifier.height(16.dp))
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = Color(0xFF1E88E5)
+                )
+            }
         }
     }
 }
-

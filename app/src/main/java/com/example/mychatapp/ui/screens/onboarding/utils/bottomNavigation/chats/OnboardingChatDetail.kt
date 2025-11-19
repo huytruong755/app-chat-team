@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -24,12 +25,7 @@ import kotlinx.coroutines.launch
  * OnboardingChatDetail.kt
  * =====================================
  * Màn hình hội thoại chi tiết giữa 2 người dùng.
- *
- * FRONTEND:
- * - Hiển thị danh sách tin nhắn, khung nhập, gửi text / ảnh
- * BACKEND:
- * - Gọi API thật để lấy/gửi tin nhắn
- * - Kết nối SignalR (C#) để cập nhật real-time
+ * Sử dụng ChatBubble & ChatInputBar từ ChatInputBarBubble.kt
  */
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,30 +35,35 @@ fun OnboardingChatDetail(
     receiverId: String,
     receiverName: String,
     senderId: String,
+    chatId: Int = 0, // chatId từ server, 0 nếu chưa có (sẽ tạo khi gửi tin nhắn đầu tiên)
     viewModel: ChatListViewModel = viewModel(),
 ) {
     val messages by viewModel.messages.collectAsState()
     var messageText by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
+    // Image picker
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia(),
         onResult = { uris ->
-            // 'uris' là một List<Uri> chứa tất cả ảnh người dùng đã chọn
             if (uris.isNotEmpty()) {
                 coroutineScope.launch {
+                    val receiverIdInt = receiverId.toIntOrNull() ?: return@launch
+                    val senderIdInt = senderId.toIntOrNull() ?: return@launch
                     uris.forEach { uri ->
-                        // Gọi ViewModel để xử lý từng ảnh
-                        viewModel.uploadImageMessage(uri, senderId, receiverId)
+                        viewModel.uploadImageMessage(context, uri, senderIdInt, receiverIdInt)
                     }
                 }
             }
         }
     )
 
-    // ✅ Lấy lịch sử tin nhắn khi mở khung chat
-    LaunchedEffect(receiverId) {
-        viewModel.loadChatHistory(receiverId)
+    // Lấy lịch sử tin nhắn khi mở chat
+    LaunchedEffect(chatId, receiverId) {
+        if (receiverId.isNotEmpty() && chatId > 0) {
+            viewModel.loadChatHistory(chatId, receiverId)
+        }
     }
 
     Scaffold(
@@ -95,8 +96,6 @@ fun OnboardingChatDetail(
                     }
                 },
                 onAttachClick = {
-                    // Mở ImagePicker thật → chọn ảnh
-                    // Gọi viewModel.uploadImageMessage(selectedImageUri, senderId, receiverId)
                     photoPickerLauncher.launch(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                     )

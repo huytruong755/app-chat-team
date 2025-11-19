@@ -27,25 +27,22 @@ import com.example.mychatapp.model.modelData.Contact
 import com.example.mychatapp.model.viewModel.ContactRepository
 import com.example.mychatapp.ui.screens.onboarding.utils.SessionManager
 import kotlinx.coroutines.launch
-import com.example.mychatapp.network.dto.RegisterRequestDto
 import com.example.mychatapp.network.RetrofitInstance
 import android.widget.Toast
-
+import android.util.Log
+import com.example.mychatapp.network.dto.LoginRequestDto
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginUserProfileScreen (
+fun LoginUserProfileScreen(
     navController: NavController,
     phoneNumber: String
 ) {
-    BackHandler {
-        // Để trống nghĩa là chặn không cho quay lại
-    }
+    BackHandler { /* chặn back */ }
 
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
 
-    //báo lỗi
     var firstNameError by remember { mutableStateOf(false) }
     var lastNameError by remember { mutableStateOf(false) }
 
@@ -53,9 +50,10 @@ fun LoginUserProfileScreen (
     val coroutineScope = rememberCoroutineScope()
     val sessionManager = remember { SessionManager(context) }
     val contactRepository = ContactRepository
+    val api = RetrofitInstance.api
 
-    val apiService = RetrofitInstance.api
-    var isLoading by remember { mutableStateOf(false) } // (Để chặn spam click)
+    var isLoading by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -81,21 +79,22 @@ fun LoginUserProfileScreen (
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
             Spacer(modifier = Modifier.height(40.dp))
 
-            // Avatar + nút thêm
+            // Avatar
             Box(contentAlignment = Alignment.BottomEnd) {
                 Box(
                     modifier = Modifier
                         .size(110.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFFFFFFF)),
+                        .background(Color.White),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.modellogin),
                         contentDescription = "Profile Icon",
-                        tint = Color(0xFF1E1E1E),
+                        tint = Color.Black,
                         modifier = Modifier.size(60.dp)
                     )
                 }
@@ -104,9 +103,9 @@ fun LoginUserProfileScreen (
                     modifier = Modifier
                         .size(28.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF000000))
+                        .background(Color.Black)
                         .border(2.dp, Color.White, CircleShape)
-                        .clickable { /* TODO: chọn ảnh */ },
+                        .clickable { /* TODO choose image */ },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -120,12 +119,12 @@ fun LoginUserProfileScreen (
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // First name
+            // FIRST NAME
             OutlinedTextField(
                 value = firstName,
                 onValueChange = {
                     firstName = it
-                    if (it.isNotBlank()) firstNameError = false
+                    firstNameError = false
                 },
                 placeholder = { Text("First Name (Required)") },
                 singleLine = true,
@@ -141,6 +140,7 @@ fun LoginUserProfileScreen (
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
             )
+
             if (firstNameError) {
                 Text(
                     text = "First name cannot be empty",
@@ -154,12 +154,12 @@ fun LoginUserProfileScreen (
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Last name
+            // LAST NAME
             OutlinedTextField(
                 value = lastName,
                 onValueChange = {
                     lastName = it
-                    if (it.isNotBlank()) lastNameError = false
+                    lastNameError = false
                 },
                 placeholder = { Text("Last Name (Required)") },
                 singleLine = true,
@@ -175,6 +175,7 @@ fun LoginUserProfileScreen (
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
             )
+
             if (lastNameError) {
                 Text(
                     text = "Last name cannot be empty",
@@ -188,75 +189,90 @@ fun LoginUserProfileScreen (
 
             Spacer(modifier = Modifier.height(30.dp))
 
-            // Save button
+            // BUTTON SAVE
             Button(
                 onClick = {
-                    val isFirstNameEmpty = firstName.isBlank()
-                    val isLastNameEmpty = lastName.isBlank()
+                    firstNameError = firstName.isBlank()
+                    lastNameError = lastName.isBlank()
 
-                    firstNameError = isFirstNameEmpty
-                    lastNameError = isLastNameEmpty
+                    if (firstNameError || lastNameError || isLoading) return@Button
 
-                    if (!isFirstNameEmpty && !isLastNameEmpty && !isLoading) {
-                        isLoading = true // Chặn spam click
+                    isLoading = true
 
-                        // "Công thức" Register (khớp Postman)
-                        val registerDto = RegisterRequestDto(
-                            firstName = firstName,
-                            lastName = lastName,
-                            phoneNumber = phoneNumber
-                            // lastSeen: Dùng giá trị mặc định (từ ApiService.kt)
-                        )
+                    coroutineScope.launch {
+                        try {
+                            // Backend tự động tạo user khi login nếu chưa tồn tại
+                            // Chỉ cần gọi login, không cần register
+                            val loginRes = api.login(LoginRequestDto(phoneNumber))
 
-                        coroutineScope.launch {
+                            if (!loginRes.isSuccessful) {
+                                Toast.makeText(context, "Đăng nhập thất bại: ${loginRes.code()}", Toast.LENGTH_SHORT).show()
+                                isLoading = false
+                                return@launch
+                            }
+
+                            // Lấy dữ liệu từ body trả về
+                            val loginData = loginRes.body()
+                            if (loginData == null) {
+                                Toast.makeText(context, "Lỗi: Dữ liệu server trả về rỗng", Toast.LENGTH_SHORT).show()
+                                isLoading = false
+                                return@launch
+                            }
+
+                            // 2) CẬP NHẬT REPOSITORY (QUAN TRỌNG NHẤT)
+                            // userId đã là Int từ backend
+                            ContactRepository.currentUserId = loginData.userId
+                            ContactRepository.setAuthToken(loginData.accessToken)
+
+                            // 3) CẬP NHẬT PROFILE (Gọi API update-profile)
+                            val fullName = "$firstName $lastName"
                             try {
-                                // 1. BÁO CHO C# (Register)
-                                val response = apiService.register(registerDto)
-
-                                if (response.isSuccessful) {
-                                    // 2. LẤY DỮ LIỆU USER (Token, ID)
-                                    val cSharpResponse = response.body()
-                                    if (cSharpResponse != null) {
-
-                                        // 3. LƯU PHIÊN ĐĂNG NHẬP (Cục bộ)
-                                        sessionManager.saveUserSession(
-                                            id = cSharpResponse.userId,
-                                            name = "$firstName $lastName"
-                                        )
-
-                                        // (Tùy chọn: Lưu vào Contact Repository)
-                                        contactRepository.addContact(
-                                            Contact(
-                                                id = cSharpResponse.userId,
-                                                name = "$firstName $lastName",
-                                                status = "Online",
-                                                isOnline = true,
-                                                avatarUrl = null
-                                            )
-                                        )
-
-                                        // 4. ĐI ĐẾN MÀN HÌNH CHÍNH
-                                        isLoading = false
-                                        navController.navigate("mainScreen") {
-                                            popUpTo(navController.graph.startDestinationRoute!!) {
-                                                inclusive = true
-                                            }
-                                            launchSingleTop = true
-                                        }
-                                    } else {
-                                        isLoading = false
-                                        Toast.makeText(context, "API Error: Empty response body", Toast.LENGTH_SHORT).show()
-                                    }
-                                } else {
-                                    // Lỗi 400 (ví dụ: "Email already taken", dù không thể)
-                                    isLoading = false
-                                    Toast.makeText(context, "API Error: ${response.code()} ${response.message()}", Toast.LENGTH_SHORT).show()
+                                val updateRes = api.updateProfile(
+                                    "Bearer ${loginData.accessToken}",
+                                    com.example.mychatapp.network.dto.UpdateProfileDto(
+                                        firstName = firstName,
+                                        lastName = lastName,
+                                        avatarUrl = ""
+                                    )
+                                )
+                                if (!updateRes.isSuccessful) {
+                                    Log.w("OnboardingUserProfile", "Failed to update profile: ${updateRes.code()}")
                                 }
                             } catch (e: Exception) {
-                                // Lỗi "Failed to connect"
-                                isLoading = false
-                                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                                Log.e("OnboardingUserProfile", "Error updating profile: ${e.message}")
                             }
+
+                            // 4) LƯU SESSION VÀO MÁY
+                            sessionManager.saveUserSession(
+                                id = loginData.userId.toString(), // SessionManager cần String
+                                name = fullName,
+                                token = loginData.accessToken,
+                                avatarUrl = ""
+                            )
+
+                            // 5) CẬP NHẬT DANH BẠ CỤC BỘ (Để hiển thị chính mình)
+                            contactRepository.clear()
+                            contactRepository.addSelfToLocal(
+                                Contact(
+                                    id = loginData.userId, // Đã là Int
+                                    name = fullName,
+                                    status = "Online",
+                                    isOnline = true,
+                                    avatarUrl = null
+                                )
+                            )
+
+                            // 6) CHUYỂN MÀN HÌNH
+                            isLoading = false
+                            navController.navigate("mainScreen") {
+                                popUpTo("user_profile_screen") { inclusive = true }
+                                launchSingleTop = true
+                            }
+
+                        } catch (e: Exception) {
+                            isLoading = false
+                            Toast.makeText(context, "Lỗi kết nối: ${e.message}", Toast.LENGTH_SHORT).show()
+                            e.printStackTrace()
                         }
                     }
                 },

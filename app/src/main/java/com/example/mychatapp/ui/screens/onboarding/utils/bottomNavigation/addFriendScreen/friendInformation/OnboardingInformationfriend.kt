@@ -157,24 +157,36 @@ fun FriendInformationScreen(
                 // Nút Message
                 Button(
                     onClick = {
-                        // Tạo đối tượng Contact từ 'profile' (thông tin của bạn bè)
-                        // thay vì từ 'profile' của người dùng (SelfProfile)
-                        val friend = Contact(
-                            id = profile.id, // ID của bạn bè
-                            name = profile.name, // Tên của bạn bè
-                            status = "Friend",
-                            isOnline = false,
-                            avatarUrl = profile.imageUrl // Avatar của bạn bè
+                        // 1. Gọi API Kết bạn thật sự (Lưu vào DB)
+                        contactViewModel.addFriend(
+                            friendId = profile.id, // Hoặc ID kiểu Int tùy hàm
+                            onSuccess = {
+
+                                val safeId = profile.id.toIntOrNull() ?: 0
+                                // 2. Nếu thành công -> Mới chuyển sang màn hình Chat
+                                val friend = Contact(
+                                    id = safeId,
+                                    name = profile.name,
+                                    status = "Friend",
+                                    isOnline = false,
+                                    avatarUrl = profile.imageUrl
+                                )
+                                // Thêm vào list chat tạm thời để hiện ngay
+                                chatViewModel.addChat(friend)
+
+                                // Chuyển hướng
+                                // chatId = 0 vì chưa có chat, sẽ được tạo khi gửi tin nhắn đầu tiên
+                                navController.navigate("chat_detail/0/${friend.id}/${friend.name}"){
+                                    popUpTo("contacts")
+                                }
+                            },
+                            onError = {
+                                // Nếu lỗi (ví dụ đã là bạn bè rồi) -> Vẫn cho vào chat
+                                // Logic: Đã là bạn thì cứ vào chat thôi
+                                // chatId = 0 vì chưa có chat, sẽ được tạo khi gửi tin nhắn đầu tiên
+                                navController.navigate("chat_detail/0/${profile.id}/${profile.name}")
+                            }
                         )
-
-                        // 🟩 Thêm vào danh bạ và chats
-                        contactViewModel.addContact(friend)
-                        chatViewModel.addChat(friend)
-
-                        // 🟦 Điều hướng sang khung chat
-                        navController.navigate("chat_detail/${friend.id}/${friend.name}"){
-                            popUpTo("contacts")
-                        }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0057FF)),
                     shape = RoundedCornerShape(12.dp),

@@ -75,13 +75,13 @@ fun MyChatApp() {
 
 @Composable
 fun MainNavigation(startDestination:String) {
-    val navController = rememberNavController()
-        NavHost(
-            navController = navController,
+val navController = rememberNavController()
+    NavHost(
+       navController = navController,
             //startDestination = "onboarding"
-            startDestination = startDestination
+       startDestination = startDestination
 
-        ) {
+    ) {
             composable("onboarding") {
                 OnboardingScreen(navController)
             }

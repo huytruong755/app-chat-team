@@ -73,7 +73,7 @@ fun ChatBubble(message: ChatMessage) {
         horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start
     ) {
         Column(horizontalAlignment = if (isMe) Alignment.End else Alignment.Start) {
-            when (message.type) {
+            when (message.fileType) {
                 "text" -> {
                     Surface(
                         color = if (isMe) Color(0xFF2563EB) else Color.White,
@@ -87,14 +87,28 @@ fun ChatBubble(message: ChatMessage) {
                     }
                 }
 
-                "image" -> {
-                    AsyncImage(
-                        model = message.imageUrl,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(200.dp)
-                            .clip(RoundedCornerShape(12.dp)),
-                        contentScale = ContentScale.Crop
+                "image", "video" -> {
+                    message.fileUrl?.let { url ->
+                        AsyncImage(
+                            model = url,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(200.dp)
+                                .clip(RoundedCornerShape(12.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                    } ?: Text(
+                        text = "[${message.fileType}]",
+                        color = if (isMe) Color.White else Color.Black,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
+                
+                else -> {
+                    Text(
+                        text = message.content ?: "[File]",
+                        color = if (isMe) Color.White else Color.Black,
+                        modifier = Modifier.padding(12.dp)
                     )
                 }
             }

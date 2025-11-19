@@ -61,37 +61,27 @@ fun MainScreen(navController: NavController) {
             }
             composable("chats") { OnboardingChats(navController) }
             composable(
-                route = "chat_detail/{friendId}/{friendName}",
+                route = "chat_detail/{chatId}/{friendId}/{friendName}",
                 arguments = listOf(
+                    navArgument("chatId") { type = NavType.IntType },
                     navArgument("friendId") { type = NavType.StringType },
                     navArgument("friendName") { type = NavType.StringType }
                 )
             ) { backStackEntry ->
                 // 🧩 Lấy dữ liệu truyền qua NavController
+                val chatId = backStackEntry.arguments?.getInt("chatId") ?: 0
                 val friendId = backStackEntry.arguments?.getString("friendId") ?: ""
                 val friendName = backStackEntry.arguments?.getString("friendName") ?: ""
 
-                /**
-                 * ============================================
-                 * Truyền dữ liệu cho OnboardingChatDetail
-                 * ============================================
-                 * senderId: ID của người dùng hiện tại (có thể lấy từ session/token)
-                 * receiverId: ID của bạn bè đang nhắn
-                 * receiverName: tên hiển thị
-                 *
-                 * Khi backend thật hoạt động:
-                 *  - senderId = userSession.userId (hoặc lấy từ ViewModel)
-                 *  - receiverId = friendId (được truyền từ danh sách bạn bè)
-                 *
-                 * ChatViewModel / OnboardingChatDetail sẽ dùng receiverId để gọi:
-                 *      GET /api/messages/{conversationId hoặc friendId}
-                 * để load dữ liệu chat thật
-                 */
+                // Vì ContactRepository.currentUserId là Int, cần toString() nếu tham số yêu cầu String
+                val myId = com.example.mychatapp.model.viewModel.ContactRepository.currentUserId.toString()
+
                 OnboardingChatDetail(
                     navController = bottomNavController,
-                    senderId = "1", // TODO: sau này thay bằng userId từ session login thật
+                    senderId = myId,
                     receiverId = friendId,
-                    receiverName = friendName
+                    receiverName = friendName,
+                    chatId = chatId
                 )
             }
             //selfAccount

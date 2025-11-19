@@ -1,62 +1,58 @@
 package com.example.mychatapp.network
 
-import com.example.mychatapp.model.modelData.Chat
-import com.example.mychatapp.model.modelData.ChatMessage
-import com.example.mychatapp.model.modelData.Contact
-import com.example.mychatapp.network.dto.LoginRequestDto
-import com.example.mychatapp.network.dto.LoginResponseDto
-import com.example.mychatapp.network.dto.RegisterRequestDto
-
+import com.example.mychatapp.network.dto.*
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Response
-import retrofit2.http.Body // 💡 THÊM IMPORT
-import retrofit2.http.GET
-import retrofit2.http.POST // 💡 THÊM IMPORT
-import retrofit2.http.Path
+import retrofit2.http.*
 
-/**
- * ApiService (Thực đơn)
- * Định nghĩa TẤT CẢ các lệnh gọi API đến máy chủ C#.
- * Retrofit sẽ "thực hiện" các hàm này.
- */
 interface ApiService {
 
-    // --- Ví dụ cho Contact ---
-
+    // --- AUTH ---
     @POST("Auth/login")
-    suspend fun login( // 1. Đổi tên hàm
-        @Body loginDto: LoginRequestDto // 2. Đổi tham số
-    ): Response<LoginResponseDto>
-    /**
-     * Lấy danh sách bạn bè
-     * Tương đương: GET /api/contacts
-     */
-    @GET("api/contacts")
-    suspend fun getContacts(): List<Contact>
+    suspend fun login(@Body loginDto: LoginRequestDto): Response<LoginResponseDto>
 
-    // --- Ví dụ cho Chat ---
+    @PUT("Auth/update-profile")
+    suspend fun updateProfile(
+        @Header("Authorization") token: String,
+        @Body dto: UpdateProfileDto
+    ): Response<Any>
 
-    /**
-     * Lấy danh sách các cuộc hội thoại
-     * Tương đương: GET /api/chat
-     */
-    @GET("api/chat")
-    suspend fun getChatConversations(): List<Chat>
+    // --- USER ---
+    @GET("User/list")
+    suspend fun getAllUsers(): Response<List<UserDto>>
 
-    /**
-     * Lấy lịch sử tin nhắn cho một người bạn
-     * Tương đương: GET /api/chat/123/messages
-     */
-    @GET("api/chat/{friendId}/messages")
-    suspend fun getChatHistory(@Path("friendId") friendId: String): List<ChatMessage>
+    @GET("User/{id}")
+    suspend fun getUserById(@Path("id") id: Int): Response<UserDto>
 
-    // --- Ví dụ cho Auth (Sẽ thêm sau) ---
-    // @POST("api/auth/send-otp")
-    // suspend fun sendOtp(...)
+    // --- CONTACTS ---
+    @GET("Contact")
+    suspend fun getMyContacts(
+        @Header("Authorization") token: String
+    ): Response<ContactResponseWrapper>
 
-    // @POST("api/chat/send/text")
-    // suspend fun sendTextMessage(...)
-    @POST("Auth/register")
-    suspend fun register(@Body registerDto: RegisterRequestDto): Response<LoginResponseDto>
+    // --- CHAT ---
+    @GET("Chat")
+    suspend fun getChatConversations(
+        @Header("Authorization") token: String
+    ): Response<List<ChatResponseDto>>
 
+    // --- MESSAGES ---
+    @GET("Message/{chatId}")
+    suspend fun getMessages(
+        @Header("Authorization") token: String,
+        @Path("chatId") chatId: Int
+    ): Response<List<MessageResponseDto>>
+
+    @Multipart
+    @POST("Message/send")
+    suspend fun sendMessage(
+        @Header("Authorization") token: String,
+        @Part("ChatId") chatId: RequestBody?,
+        @Part("SenderId") senderId: RequestBody,
+        @Part("ReceiverId") receiverId: RequestBody,
+        @Part("FileType") fileType: RequestBody,
+        @Part("Content") content: RequestBody?,
+        @Part file: MultipartBody.Part?
+    ): Response<SendMessageResponseDto>
 }
-

@@ -4,18 +4,13 @@ import com.google.gson.annotations.SerializedName
 
 /**
  * DTO (Data Transfer Object)
- * Nhận Token tùy chỉnh (C#) TỪ server.
+ * Nhận Token từ backend AppChat
+ * Response từ Auth/login: { accessToken: string, userId: int }
  */
 data class LoginResponseDto(
     @SerializedName("accessToken")
-    val token: String,
+    val accessToken: String,
 
-    // Sửa "userId" -> "id" để khớp C#
-    @SerializedName("id")
-    val userId: String,
-
-    // C# không gửi trường này, nên ta cho phép nó null (thêm ?)
-    @SerializedName("name")
-    val name: String?
-    // Thêm bất kỳ thông tin nào khác mà C# trả về khi đăng nhập
+    @SerializedName("userId")
+    val userId: Int
 )

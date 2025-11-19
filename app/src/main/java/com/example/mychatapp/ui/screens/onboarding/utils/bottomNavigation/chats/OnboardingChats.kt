@@ -26,23 +26,6 @@ import coil.compose.AsyncImage
 import com.example.mychatapp.model.modelData.Chat
 import com.example.mychatapp.model.viewModel.ChatViewModel
 
-/**
- * ================================
- * 📱 OnboardingChats.kt
- * ================================
- * Màn hình hiển thị danh sách các đoạn hội thoại.
- *
- * CLIENT (App – Jetpack Compose):
- * - Hiển thị danh sách các đoạn chat gần nhất (tạm dùng dữ liệu giả).
- * - Khi có backend, ViewModel sẽ gọi API thật để lấy dữ liệu.
- *
- * BACKEND (ASP.NET C#):
- * - Cần cung cấp REST API và SignalR Hub:
- *      GET /api/chat                   → Lấy danh sách đoạn chat gần nhất
- *      GET /api/chat/{friendId}        → Lấy lịch sử tin nhắn
- *      WebSocket /chathub (SignalR)    → Gửi/nhận tin nhắn real-time
- */
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnboardingChats(
@@ -50,20 +33,17 @@ fun OnboardingChats(
     viewModel: ChatViewModel = viewModel()
 ) {
     var searchQuery by remember { mutableStateOf("") }
-
-    // Lấy danh sách đoạn chat từ ViewModel (dữ liệu giả / thật từ API)
     val chats by viewModel.chats.collectAsState()
+
+    // Load danh sách chat từ backend
+    LaunchedEffect(Unit) {
+        viewModel.refreshChats()
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Chats") },
-                //thêm vào chat nhóm nếu phát triển kịp
-//                actions = {
-//                    IconButton(onClick = { /* TODO: Thêm icon tạo nhóm / tin nhắn mới */ }) {
-//                        Icon(Icons.Default.Search, contentDescription = "Search Icon")
-//                    }
-//                }
             )
         }
     ) { padding ->
@@ -74,33 +54,29 @@ fun OnboardingChats(
                 .background(Color.White)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            //Thanh tìm kiếm
             SearchBar(
                 query = searchQuery,
                 onQueryChange = { searchQuery = it }
             )
+
             Spacer(modifier = Modifier.height(8.dp))
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
-                // Lọc danh sách theo tên người
                 val filteredChats = chats.filter {
                     it.name.contains(searchQuery, ignoreCase = true)
                 }
 
-                // Lọc danh sách theo ô tìm kiếm
                 items(filteredChats) { chat ->
                     ChatItem(
                         chat = chat,
                         onClick = {
-                            // Khi bấm vào một đoạn chat:
-                            // Điều hướng đến màn hình chi tiết chat
-                            // Ở đó App sẽ gọi API:
-                            //    GET /api/chat/{chat.id}
-                            //    hoặc kết nối SignalR /chathub
-                            navController.navigate("chat_detail/${chat.id}/${chat.name}")
+                            // Điều hướng sang OnboardingChatDetail
+                            // chat.id là chatId từ server, chat.partnerId là friendId
+                            val friendId = chat.partnerId?.toString() ?: chat.id.toString()
+                            navController.navigate("chat_detail/${chat.id}/${friendId}/${chat.name}")
                         }
                     )
                 }
@@ -146,29 +122,17 @@ fun SearchBar(
             unfocusedIndicatorColor = Color.Transparent,
             disabledIndicatorColor = Color.Transparent,
             cursorColor = Color.Gray,
-            //test thử
             focusedLeadingIconColor = Color.Gray,
             unfocusedLeadingIconColor = Color.Gray
         ),
         textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp)
     )
 }
-/**
- * Thành phần hiển thị một đoạn chat (avatar, tên, tin nhắn cuối, thời gian)
- *
- * BACKEND:
- *  - Cần trả về cấu trúc dữ liệu Chat:
- *      {
- *          "id": "1",
- *          "name": "Athalia Putri",
- *          "lastMessage": "Hey, how are you?",
- *          "time": "09:45 AM",
- *          "avatarUrl": "https://i.pravatar.cc/150?img=1"
- *      }
- */
+
 @Composable
 fun ChatItem(
-    chat: Chat, onClick: () -> Unit
+    chat: Chat,
+    onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -181,7 +145,6 @@ fun ChatItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(modifier = Modifier.size(50.dp)) {
-            // Ảnh đại diện hoặc ký tự viết tắt
             if (chat.avatarUrl != null) {
                 AsyncImage(
                     model = chat.avatarUrl,
@@ -207,6 +170,7 @@ fun ChatItem(
                 }
             }
         }
+
         Spacer(modifier = Modifier.width(16.dp))
 
         Column(modifier = Modifier.weight(1f)) {
@@ -221,13 +185,11 @@ fun ChatItem(
                 text = chat.lastMessage,
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray,
-//                fontSize = 14.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         }
 
-        // Hiển thị thời gian tin nhắn cuối cùng
         Text(
             text = chat.time,
             fontWeight = FontWeight.SemiBold,
